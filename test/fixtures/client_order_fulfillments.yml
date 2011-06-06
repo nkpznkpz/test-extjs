@@ -1,0 +1,23 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  client_invoice_id: 1
+  order_status_id: 1
+  total_drain_weight: 1.5
+  total_gross_weight: 1.5
+  total_net_weight: 1.5
+  quantity: 1.5
+  container_usage: 1.5
+  unit_id: 1
+  client_order_id: 1
+
+two:
+  client_invoice_id: 1
+  order_status_id: 1
+  total_drain_weight: 1.5
+  total_gross_weight: 1.5
+  total_net_weight: 1.5
+  quantity: 1.5
+  container_usage: 1.5
+  unit_id: 1
+  client_order_id: 1

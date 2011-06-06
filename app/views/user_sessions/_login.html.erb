@@ -1,0 +1,36 @@
+<style type="text/css" >
+  *					{ margin: 0; padding: 0; }
+body				{ font-family: Georgia, serif; background: url(../images/login-page-bg.jpg) top center no-repeat #c4c4c4; color: #3a3a3a;  }
+.clear				{ clear: both; }
+form				{ width: 406px; margin: 170px auto 0; }
+legend				{ display: none; }
+fieldset			{ border: 0; }
+label				{ width: 115px; text-align: right; float: left; margin: 0 10px 0 0; padding: 9px 0 0 0; font-size: 16px; }
+input				{ width: 220px; display: block; padding: 4px; margin: 0 0 10px 0; font-size: 18px;
+					  color: #3a3a3a; font-family: Georgia, serif;}
+input[type=checkbox]{ width: 20px; margin: 0; display: inline-block; }
+.button				{ background: url(images/button-bg.png) repeat-x top center; border: 1px solid #999;
+					  -moz-border-radius: 5px; padding: 5px; color: black; font-weight: bold;
+					  -webkit-border-radius: 5px; font-size: 13px;  width: 70px; }
+.button:hover		{ background: white; color: black; }
+</style>
+<% form_for UserSession.new,
+  :as => "user_session",
+  :url => login_path do |f| %>
+  <fieldset>
+    <legend>Log in</legend>
+    <p>      
+      <%=f.label "username : "%>
+      <%=f.text_field :username %>
+    </p>
+    <p>
+      <%=f.label "password : "%>
+      <%=f.password_field  :password %>
+    </p><%=flash[:error] %>
+    <%=f.submit  "submit", :disable_with => "loading...",
+      :style => "margin: -0px 0 0 287px;", :class => "button" %>
+    <label for="remember_me" style="padding: 0;">Remember me?</label>
+    <input type="checkbox" id="remember_me" style="position: relative; top: 3px; margin: 0; " name="remember_me"/>
+    <div class="clear"></div>
+  </fieldset>
+<%end%>

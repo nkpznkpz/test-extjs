@@ -1,0 +1,9 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  client_order_fulfillment_id: 1
+  client_container_id: 1
+
+two:
+  client_order_fulfillment_id: 1
+  client_container_id: 1

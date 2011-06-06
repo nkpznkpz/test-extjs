@@ -1,0 +1,135 @@
+<script type="text/javascript">
+  var lastsel;
+  jQuery(document).ready(function(){
+    var mygrid = jQuery("#supplier_order_fulfillments").jqGrid({
+      url:'<%=supplier_order_fulfillment_grid_view_path(params[:id]) %>',
+      editurl:'<%=supplier_order_fulfillment_grid_path(params[:id]) %>',
+      datatype: "json",
+      colNames:['id','trader sku','quantity','order status','total drain weight','total gross weight','total net weight','container usage','unit'],
+      colModel:[
+        {name:'id', index:'id',width:30,editable:false,hidden:true},
+        {name:'trader_sku_id', index:'trader_sku_id',width:100,editable:true,search:false,
+          edittype:'select',editoptions:<%=data_for_sel(TraderSku.find_name_for_select,:id,:sku) %>},
+        {name:'quantity', index:'quantity',editrules:{required:true},width:100,editable:true},
+        {name:'order_status_id', index:'order_status_id',editrules:{required:true},width:100,editable:true,
+          edittype:'select',editoptions:<%=data_for_sel(OrderStatus.find_name_for_select,:id,:name) %>},
+
+        {name:'total_drain_weight', index:'total_drain_weight',width:125,editable:true,search:false},
+        {name:'total_gross_weight', index:'total_gross_weight', width:125,editable:true,search:false},
+        {name:'total_net_weight', index:'total_net_weight', width:120,editable:true,search:false},
+        {name:'container_usage', index:'container_usage', width:120,editable:true},
+        {name:'unit_id', index:'unit_id', width:95,editable:true,
+          edittype:'select',editoptions:<%=data_for_sel(Unit.find_name_for_select,:id,:name) %>},
+      ],
+      pager: '#supplier_order_fulfillments_pager',
+      rowNum:10,
+      rowList:[10,25,50,100],
+      imgpath: '/images/jqgrid',
+      sortname: '',
+      viewrecords: true,
+      height: 150,
+      sortorder: '',
+      gridview: false,
+      scrollrows: true,
+      autowidth: false,
+      rownumbers: false,
+      multiselect: false,
+      loadui:'block',
+      ondblClickRow: function(rowid,iRow,iCol,e){
+
+      },
+      subGrid:false,
+      caption: "Listing supplier order fulfillments",
+      gridComplete: function(){
+        var ids = jQuery("#supplier_order_fulfillments").jqGrid('getDataIDs');
+        for(var i=0;i < ids.length;i++){
+          var cl = ids[i];
+          btn = '<input type="button" value="View" onclick="show_redirect(\''+cl+'\')" />';
+          jQuery("#supplier_order_fulfillments").jqGrid('setRowData',ids[i],{act:btn});
+        }
+        $("input:button").button();
+      }
+    })
+    .navGrid('#supplier_order_fulfillments_pager',
+    {edit:false,add:false,del:false,search:false,refresh:true},
+    {closeAfterEdit:true,afterSubmit:function(r,data){return afterSubmit(r,data,'edit');},
+      afterShowForm:function(id){
+        jQuery('#FrmGrid_supplier_order_fulfillments #order_fulfillment_date').datepicker();
+      }
+    },
+    {closeAfterAdd:true,afterSubmit:function(r,data){return afterSubmit(r,data,'add');},
+      afterShowForm:function(id){
+        jQuery('#FrmGrid_supplier_order_fulfillments #order_fulfillment_date').datepicker();
+      }
+    },
+    {afterSubmit:function(r,data){return afterSubmit(r,data,'delete');}}
+  );
+    jQuery("#supplier_order_fulfillment_filter").filterGrid(
+    '#supplier_order_fulfillments',
+    {
+      gridModel:true,
+      gridNames:true,
+      gridToolbar:false,
+      enableSearch:true,
+      enableClear:true,
+      clearButton:'View All'
+    });
+
+    //button for add
+    $("#add_supplier_order_fulfillment").click(function(){
+      jQuery("#supplier_order_fulfillments").jqGrid('editGridRow',"new",{
+        closeAfterAdd:true,
+        afterSubmit:function(r,data){
+          return afterSubmit(r,data,'add');
+        },
+        afterShowForm:function(id){
+
+        }
+        ,reloadAfterSubmit:true
+      });
+    });
+
+    //button for edit
+    $("#edit_supplier_order_fulfillment").click(function(){
+      var gr = jQuery("#client_supplier_fulfillments").jqGrid('getGridParam','selrow');
+      if( gr != null )
+        jQuery("#client_supplier_fulfillments").jqGrid('editGridRow',gr,{
+          closeAfterEdit:true,
+          afterSubmit:function(r,data){
+            return afterSubmit(r,data,'edit');
+          },
+        afterShowForm:function(id){
+
+        }
+      });
+      else
+        alert("Please Select Row");
+    });
+
+    //button for delete
+    $("#delete_supplier_order_fulfillment").click(function(){
+      var gr = jQuery("#supplier_order_fulfillments").jqGrid('getGridParam','selrow');
+      if( gr != null )
+        jQuery("#supplier_order_fulfillments").jqGrid('delGridRow',gr,{
+          afterSubmit:function(r,data){
+            return afterSubmit(r,data,'delete');
+          }
+      });
+      else
+        alert("Please Select Row to delete!");
+    });
+  });
+  //  function show_redirect(id){
+
+  // }
+
+</script>
+
+<div>
+  <input type="button" id="add_supplier_order_fulfillment" value="Add" />
+  <input type="button" id="edit_supplier_order_fulfillment" value="Edit" />
+  <input type="button" id="delete_supplier_order_fulfillment" value="Delete" />
+  <div id="supplier_order_fulfillment_filter"></div>
+  <table id="supplier_order_fulfillments"></table>
+  <div id="supplier_order_fulfillments_pager"></div>
+</div>

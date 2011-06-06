@@ -1,0 +1,13 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  invoice_number: MyString
+  invoice_date: 2010-08-31 09:32:06
+  total_amount: 1.5
+  payment_date: 2010-08-31 09:32:06
+
+two:
+  invoice_number: MyString
+  invoice_date: 2010-08-31 09:32:06
+  total_amount: 1.5
+  payment_date: 2010-08-31 09:32:06

@@ -1,0 +1,496 @@
+<style type="text/css">
+  .desCombo{
+    color:#888888;
+  }
+</style>
+<script type="text/javascript">
+  //create namespace client_po/index
+  var sSku = {}; //<<-----------find and replace for you
+  //======================= init all config ==============================
+  sSku.restUrl = {
+    read:'<%=url_for :controller => 'supplier_skus', :action => 'index', :q => 1 %>',
+    create:'<%=url_for :controller => 'supplier_skus', :action => 'post_data' %>',
+    update:'<%=url_for :controller => 'supplier_skus', :action => 'post_data' %>',  // params[:id] != ''
+    destroy:'<%=url_for :controller => 'supplier_skus', :action => 'post_data' %>',  //--send params[:oper] = 'del'
+    viewDetail: ''
+  };
+
+  sSku.rightClick = function(grid, row, e){
+    var storeItem = grid.getStore();
+    var itemGridRecords = storeItem.getRange(0,storeItem.getCount()-1);
+    e.preventDefault();
+    this.cellMenu = new Ext.menu.Menu({
+      items : [{
+          text: 'Edit',
+          iconCls: 'silk-application-edit',
+          handler: sSku.onEdit
+        }, {
+          text: 'Delete',
+          iconCls: 'silk-delete',
+          handler: sSku.onDelete
+        }]
+    });
+    this.cellMenu.showAt(e.getXY());
+  }
+
+  sSku.readerField =[
+    {name:'id',mapping:'id'},
+    {name:'trader_sku_id',mapping:'trader_sku_id'},
+    {name:'trader_sku_name',mapping:'trader_sku_name'},
+    {name:'supplier_sku_id',mapping:'supplier_sku_id'},
+    {name:'supplier_sku_name',mapping:'supplier_sku_name'},
+    {name:'supplier_id',mapping:'supplier_id'},
+    {name:'supplier_name',mapping:'supplier_name'}
+  ];
+
+  //============column model for grid ======================================
+  sSku.cm = new Ext.grid.ColumnModel({
+    defaults:{
+      sortable:true
+    },
+    columns:[
+      new Ext.grid.RowNumberer(),
+      {
+        header: 'Trader Sku',
+        width: 250,
+        dataIndex: 'trader_sku_id',
+        renderer:function(val, meta, record) {
+          return record.data.trader_sku_name;
+        }
+      },
+      {
+        header: 'Supplier Sku',
+        width: 170,
+        dataIndex: 'supplier_sku_id',
+        renderer:function(val, meta, record) {
+          return record.data.supplier_sku_name;
+        }
+      },
+      {
+        header: 'Supplier',
+        width: 200,
+        dataIndex: 'supplier_id',
+        renderer:function(val, meta, record) {
+          return record.data.supplier_name;
+        }
+      }
+    ]
+  });
+
+  sSku.filterField = [{ //---------map same Json Reader name
+      type: 'string',
+      dataIndex: 'trader_sku_id'
+    }, {
+      type: 'string',
+      dataIndex: 'supplier_sku_id'
+    }, {
+      type: 'string',
+      dataIndex: 'supplier_id'
+    }];
+
+  sSku.formItem = [ //--------item in form ex.combobox,textfield
+    {
+      xtype:'hidden',
+      name:'id'
+    }, {
+      xtype: 'combo',
+      name:'trader_sku_id',
+      fieldLabel: 'Trader Sku',
+      value:true,
+      typeAhead: true,
+      triggerAction: 'all',
+      lazyRender:true,
+      forceSelection:true,
+      selectOnFocus:true,
+      store: new Ext.data.Store({ //<----this store for Combobox
+        url:'<%= url_for(:controller => 'supplier_skus', :action => 'get_all_trader_sku') %>',
+        mode: 'remote',
+        autoLoad: true,
+        reader:new Ext.data.JsonReader({
+          totalProperty: 'total',
+          root: 'data',
+          fields:[
+            {name:'id',mapping:'id'},
+            {name:'sku',mapping:'sku'},
+            {name:'product_name',mapping:'product_name'}
+          ]
+        })
+      }),
+      hiddenName:'trader_sku_id',
+      valueField: 'id',
+      displayField: 'product_name',
+      tpl:'<tpl for="."><div class="x-combo-list-item">{product_name}'+
+        '<div class="desCombo"><b>Trader SKU : </b>{sku}</div>'+
+        '</div></tpl>',
+      listeners:{
+        'expand': function(c){
+          this.store.load();
+        }
+      }
+    }, {
+      xtype:'textfield',
+      fieldLabel: 'Supplier Sku',
+      name: 'supplier_sku_name'
+    }, {
+      xtype: 'combo',
+      name:'supplier_id',
+      fieldLabel: 'Supplier',
+      value:true,
+      typeAhead: true,
+      triggerAction: 'all',
+      lazyRender:true,
+      forceSelection:true,
+      selectOnFocus:true,
+      store: new Ext.data.Store({ //<----this store for Combobox
+        url:'<%= url_for(:controller => 'suppliers', :action => 'get_all_supplier') %>',
+        mode: 'remote',
+        autoLoad: true,
+        reader:new Ext.data.JsonReader({
+          totalProperty: 'total',
+          root: 'data',
+          fields:[
+            {name:'id',mapping:'id'},
+            {name:'name',mapping:'name'},
+            {name:'address',mapping:'address'}
+          ]
+        })
+      }),
+      hiddenName:'supplier_id',
+      valueField: 'id',
+      displayField: 'name',
+      tpl:'<tpl for="."><div class="x-combo-list-item">{name}'+
+        '<div class="desCombo"><b>Address : </b>{address}</div>'+
+        '</div></tpl>',
+      listeners:{
+        'expand': function(c){
+          this.store.load();
+        }
+      }
+    }
+  ];
+
+  //===============title text for grid
+  sSku.text = {
+    grid: 'Listing Supplier SKU',
+    addWin: 'Add Supplier SKU',
+    editWin: 'Edit Supplier SKU',
+    displayFooter : 'Displaying Supplier SKU {0} - {1} of {2}',
+    emptyDisplayFooter: 'No Supplier SKU to display'
+  };
+  sSku.errorConfig = {
+    title:'Error',
+    msg: 'Please Select Row.',
+    buttons: Ext.Msg.OK,
+    animEl: 'logo',
+    icon: Ext.MessageBox.ERROR
+  }
+
+  Ext.onReady(function(){
+    var limit = 10;
+    var gridMask = new Ext.LoadMask('supplier_sku_grid', {msg:"Loading..."});
+    //============== Action Handler ======================
+
+    sSku.onAdd = function(){ //event on click add on grid menu
+      sSku.addForm.getForm().reset();
+      //sSku.addForm.getForm().setValues({request_et_type:'ETD'});
+      sSku.addForm.getForm().clearInvalid();
+      sSku.addWin.show();
+    }
+    sSku.onEdit = function(){ //event on click add on grid menu
+      var r = sSku.grid.getSelectionModel().getSelected();
+      if(r!=undefined){
+        sSku.editForm.getForm().reset();
+        //sSku.addForm.getForm().setValues({request_et_type:'ETD'});
+        sSku.editForm.getForm().clearInvalid();
+        var rec = sSku.store.getById(''+r.data.id);
+        sSku.editForm.getForm().loadRecord(rec);
+        sSku.editWin.show();
+      }else{
+        Ext.Msg.show(sSku.errorConfig);
+      }
+    }
+    sSku.onDelete = function(){
+      var r = sSku.grid.getSelectionModel().getSelected();
+      if(r!=undefined){
+        var rec = sSku.store.getById(''+r.data.id);
+        Ext.MessageBox.confirm('Delete', 'Are you sure?', function(btn){
+          if(btn == 'yes'){
+            gridMask.show();
+            var conn = new Ext.data.Connection();
+            conn.request({
+              url: sSku.restUrl.destroy,
+              //method: 'POST',
+              params: {
+                oper:'del',
+                id:r.data.id
+              },
+              success: function(response, options){
+                var resText = Ext.util.JSON.decode(response.responseText);
+                gridMask.hide();
+                if(resText.success){
+                  sSku.store.reload();
+                }else{
+                  Ext.MessageBox.show({
+                    title:'Error',
+                    msg: resText.errors.base,
+                    buttons: Ext.Msg.OK,
+                    icon: Ext.MessageBox.ERROR
+                  });
+                }
+              }
+              //  failure: function(response, options){ alert('Delete operation failed.'); }
+            });
+
+          }
+        });
+      }else{
+        Ext.Msg.show(sSku.errorConfig);
+      }
+    }
+    //================== End Handler ===================
+    Ext.QuickTips.init();
+    sSku.writer = new Ext.data.JsonWriter({
+      encode: true,
+      writeAllFields: false
+    });
+    sSku.reader = new Ext.data.JsonReader({
+      totalProperty: 'total',
+      successProperty: 'success',
+      idProperty: 'id',
+      root: 'data',
+      messageProperty: 'message',
+      fields: sSku.readerField
+    });
+    //================== store =====================
+    sSku.store = new Ext.data.GroupingStore({
+      url: sSku.restUrl.read,
+      reader: sSku.reader,
+      writer: sSku.writer,
+      autoSave: false,
+      remoteSort: true,
+      remoteGroup:true,
+      baseParams:{
+        start: 0,
+        limit: limit
+      },
+      autoLoad:true
+    });
+
+    //==================  filter =====================
+    sSku.filters = new Ext.ux.grid.GridFilters({
+      encode: false, // json encode the filter query
+      updateBuffer: 1,
+      filters: sSku.filterField
+    });
+
+    sSku.addForm = new Ext.form.FormPanel({
+    id: 'sSkuAddForm',
+      iconCls: 'silk-user',
+      frame: true,
+      labelWidth: 120,
+      labelAlign: 'right',
+      frame: true,
+      width: 400,
+      defaults:{
+        width:200
+      },
+      items: sSku.formItem,
+      buttons:[
+        {
+          id: 'sSkuBtnAddFormSave',
+          text:'Save',
+          handler:function(){ //handler button click
+            sSku.addForm.getForm().submit({
+              url: sSku.restUrl.create,
+              params:{
+                is_add: '1'
+              },
+              waitMsg:'Saving...',
+              success: function(form, action) {
+                sSku.addWin.hide();
+                sSku.store.load({
+                  params:{
+                    sort:'supplier_skus.id',
+                    dir:'DESC'
+                  }
+                });
+              },
+              failure: function(form, action) {
+                var resText = Ext.util.JSON.decode(action.response.responseText);
+                console.log(resText);
+                gridMask.hide();
+                console.log(resText.success);
+                if(resText.success){
+                  cIndex.store.reload();
+                }else{
+                  if(resText.errors.base!=null){
+                    Ext.MessageBox.show({
+                      title:'Error',
+                      msg: resText.errors.base,
+                      buttons: Ext.Msg.OK,
+                      icon: Ext.MessageBox.ERROR
+                    });
+                  }
+                }
+              }
+            });
+          }
+        }, {
+        id: 'sSkuBtnAddFormCancel',
+          text:'Cancel',
+          handler:function(){
+            sSku.addWin.hide();
+          }
+        }
+      ]
+    });
+
+    sSku.editForm = new Ext.form.FormPanel({
+    id: 'sSkuEditForm',
+      iconCls: 'silk-user',
+      frame: true,
+      labelAlign: 'right',
+      frame: true,
+      width: 400,
+      defaultType: 'textfield',
+      defaults:{
+        width:200
+      },
+      items: sSku.formItem,
+      buttons:[
+        {
+          id: 'sSkuBtnEditFormSave',
+          text:'Save',
+          handler:function(){
+            sSku.editForm.getForm().submit({
+              url: sSku.restUrl.update,
+              waitMsg:'Saving...',
+              success: function(form, action) {
+                sSku.editWin.hide();
+                sSku.store.reload();
+              },
+              failure: function(form, action) {
+                var resText = Ext.util.JSON.decode(action.response.responseText);
+                console.log(resText);
+                gridMask.hide();
+                console.log(resText.success);
+                if(resText.success){
+                  cIndex.store.reload();
+                }else{
+                  if(resText.errors.base!=null){
+                    Ext.MessageBox.show({
+                      title:'Error',
+                      msg: resText.errors.base,
+                      buttons: Ext.Msg.OK,
+                      icon: Ext.MessageBox.ERROR
+                    });
+                  }
+                }
+              }
+            });
+          }
+        }, {
+        id: 'sSkuBtnEditFormCancel',
+          text:'Cancel',
+          handler:function(){
+            sSku.editWin.hide();
+          }
+        }
+      ]
+    });
+
+    sSku.addWin = new Ext.Window({
+    id: 'sSkuAddWin',
+      title: sSku.text.addWin,
+      closeAction:'hide',
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        sSku.addForm
+      ]
+    });
+
+    sSku.editWin = new Ext.Window({
+    id: 'sSkuEditWin',
+      title: sSku.text.editWin,
+      closeAction:'hide',
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        sSku.editForm
+      ]
+    });
+
+    sSku.grid = new Ext.grid.GridPanel({
+    id: 'sSkuGrid',
+      renderTo: 'supplier_sku_grid',
+      title: sSku.text.grid,
+      iconCls: 'silk-application-view_columns',
+      height: 350,
+      store: sSku.store,
+      loadMask: true,
+      stripeRows: true,
+      enableRowBody: true,
+      plugins: [sSku.filters],
+      view: new Ext.grid.GroupingView({
+        forceFit:true,
+        groupTextTpl: '{text} ({[values.rs.length]} {[values.rs.length > 1 ? "Items" : "Item"]})'
+      }),
+      colModel:sSku.cm,
+      tbar: [{
+        id: 'sSkubtnGridAdd',
+          text: 'Add',
+          iconCls: 'silk-add',
+          handler: sSku.onAdd
+        }, '-', {
+          id: 'sSkuBtnGridEdit',
+          text: 'Edit',
+          iconCls: 'silk-application-edit',
+          handler: sSku.onEdit
+        }, '-', {
+          id: 'sSkuBtnGridDelete',
+          text: 'Delete',
+          iconCls: 'silk-delete',
+          handler: sSku.onDelete
+        },'->',
+        {
+          id: 'sSkuBtnGridClearFilter',
+          text: 'Clear Filter Data',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            sSku.grid.filters.clearFilters();
+          }
+        },'-',
+        {
+          id: 'sSkuBtnGridClearGrouping',
+          text: 'Clear Grouping',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            sSku.store.clearGrouping();
+          }
+        }
+      ],
+      listeners : {
+        'rowcontextmenu' : function(grid, rowIndex, e){
+          var sm = grid.getSelectionModel();
+          sm.selectRow(rowIndex, sm.isSelected(rowIndex));
+          sSku.rightClick(grid, rowIndex, e);
+        }
+      },
+      bbar:
+        new Ext.PagingToolbar({
+        pageSize: limit,
+        store: sSku.store,
+        displayInfo: true,
+        displayMsg: sSku.text.displayFooter ,
+        emptyMsg: sSku.text.emptyDisplayFooter,
+        plugins: [sSku.filters]
+      })
+    });
+  });
+</script>
+<div id="supplier_sku_grid"></div>

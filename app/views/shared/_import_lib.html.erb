@@ -1,0 +1,26 @@
+<% ex_path = '../javascripts/extjs/examples/' %>
+<%= stylesheet_link_tag 'main', '../javascripts/extjs/resources/css/ext-all' %>
+<%= stylesheet_link_tag ex_path+'shared/icons/silk' %>
+<%#= javascript_include_tag 'ext-3.2.1/adapter/ext/ext-base-debug', 'ext-3.2.1/ext-all-debug' %>
+<%= javascript_include_tag 'extjs/adapter/ext/ext-base', 'extjs/ext-all' %>
+
+<%#= for grid filter %>
+<%= stylesheet_link_tag ex_path+'ux/gridfilters/css/GridFilters', ex_path+'ux/gridfilters/css/RangeMenu' %>
+<%= javascript_include_tag ex_path+'ux/gridfilters/menu/RangeMenu',
+  ex_path+'ux/gridfilters/menu/ListMenu',
+  ex_path+'ux/gridfilters/GridFilters',
+  ex_path+'ux/gridfilters/filter/Filter',
+  ex_path+'ux/gridfilters/filter/StringFilter',
+  ex_path+'ux/gridfilters/filter/DateFilter',
+  ex_path+'ux/gridfilters/filter/ListFilter',
+  ex_path+'ux/gridfilters/filter/NumericFilter',
+  ex_path+'ux/gridfilters/filter/BooleanFilter'
+%>
+<%= javascript_include_tag ex_path+'ux/GroupSummary' %>
+<%= stylesheet_link_tag ex_path+'ux/css/GroupSummary' %>
+<%= javascript_include_tag 'application' %>
+<script type="text/javascript">
+  Ext.BLANK_IMAGE_URL = 'javascripts/extjs/resources/images/default/s.gif';
+  //rails security key
+  Ext.Ajax.extraParams = {authenticity_token: '<%= form_authenticity_token %>'};
+</script>

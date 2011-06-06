@@ -1,0 +1,15 @@
+&nbsp;<%= link_to 'All Client Contracts', client_contracts_path  %> >
+<%= link_to 'Contract', client_contract_path(@client_contract) %> >
+<%= link_to 'PO', client_contract_client_po_path(@client_contract,@client_po) %> >
+<%= link_to 'Order', client_contract_client_po_client_order_path(@client_contract,@client_po,@client_order) %>
+
+<fieldset class="ui-widget ui-corner-all">
+  <legend class="ui-widget ui-widget-header ui-corner-all">Client Order</legend>
+  <b>Trader SKU : </b><%=h @client_order.trader_sku.sku %>
+  <b>Quantity : </b><%=h @client_order.total_quantity %>
+  <b>Request ET : </b><%=h @client_order.request_et %>
+  <b>Request ET Type : </b><%=h @client_order.request_et_type %>
+  <b>Unit Of Order : </b><%=h @client_order.unit_of_order %>
+  <b>Price/Unit : </b><%=h @client_order.unit_price %>
+</fieldset>
+<%= render :file => 'client_order_fulfillments/index' %>

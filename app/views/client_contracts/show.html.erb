@@ -1,0 +1,25 @@
+&nbsp;<%= link_to 'All Client Contracts', client_contracts_path  %> >
+<%= link_to 'Contract', client_contract_path(@client_contract) %>
+<div id="mainPanel"></div>
+<!-- class="x-hide-display" -->
+<div id="detail" >
+  <p>
+    <b>Contract code:</b>
+    <%=h @client_contract.contract_code %>
+  </p>
+  <p>
+    <b>Contract date:</b>
+    <%=h to_date_str(@client_contract.contract_date) %>
+  </p>
+  <p>
+    <b>Actual contract:</b>
+    <%=h @client_contract.actual_contract %>
+  </p>
+  <p>
+    <b>Client:</b>
+    <%=h @client_contract.client.name %>
+  </p>
+</div> 
+    <%= render :file => 'client_contact_records/index' %><br/>
+<div style="clear: both;"></div>
+<%= render :file => 'client_pos/index' %>

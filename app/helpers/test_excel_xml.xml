@@ -1,0 +1,132 @@
+<?xml version="1.0"?>
+  <?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:x="urn:schemas-microsoft-com:office:excel"
+xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+xmlns:html="http://www.w3.org/TR/REC-html40">
+    <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+        <Version>12.00</Version>
+    </DocumentProperties>
+    <ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel">
+        <WindowHeight>10005</WindowHeight>
+        <WindowWidth>10005</WindowWidth>
+        <WindowTopX>120</WindowTopX>
+        <WindowTopY>135</WindowTopY>
+        <ProtectStructure>False</ProtectStructure>
+        <ProtectWindows>False</ProtectWindows>
+    </ExcelWorkbook>
+    <Styles>
+        <Style ss:ID="Default" ss:Name="Normal">
+            <Alignment ss:Vertical="Bottom"/>
+            <Borders/>
+            <Font ss:FontName="tahoma"/>
+            <Interior/>
+            <NumberFormat/>
+            <Protection/>
+        </Style>
+        <Style ss:ID="s68">
+            <Alignment ss:Horizontal="Center" ss:Vertical="Bottom"/>
+            <Borders>
+                <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+                <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+                <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+                <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+            </Borders>
+            <Font ss:FontName="tahoma" x:Family="Swiss" ss:Bold="1"/>
+            <Interior ss:Color="#BFBFBF" ss:Pattern="Solid"/>
+        </Style>
+        <Style ss:ID="s69">
+            <Borders>
+                <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+                <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+                <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+                <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+            </Borders>
+        </Style>
+    </Styles>
+    <Worksheet ss:Name="Client">
+        <Table ss:ExpandedColumnCount="3" ss:ExpandedRowCount="6" x:FullColumns="1"
+   x:FullRows="1">
+            <Column ss:Width="80.25"/>
+            <Column ss:Width="200.25" ss:Span="1"/>
+            <Row>
+                <Cell ss:StyleID="s68">
+                    <Data ss:Type="String">ID</Data>
+                </Cell>
+                <Cell ss:StyleID="s68">
+                    <Data ss:Type="String">Client Name</Data>
+                </Cell>
+                <Cell ss:StyleID="s68">
+                    <Data ss:Type="String">Country Name</Data>
+                </Cell>
+            </Row>
+            <Row>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="Number">1</Data>
+                </Cell>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="String">Novagrim</Data>
+                </Cell>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="String">France</Data>
+                </Cell>
+            </Row>
+            <Row>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="Number">2</Data>
+                </Cell>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="String">Weekend Foods JSC</Data>
+                </Cell>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="String">Vietnam</Data>
+                </Cell>
+            </Row>
+            <Row>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="Number">3</Data>
+                </Cell>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="String">Guangxi Nanning Hao Cong Zai Food Co.,Ltd</Data>
+                </Cell>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="String">China</Data>
+                </Cell>
+            </Row>
+            <Row>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="Number">4</Data>
+                </Cell>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="String">JVR Enterprises</Data>
+                </Cell>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="String">India</Data>
+                </Cell>
+            </Row>
+            <Row>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="Number">5</Data>
+                </Cell>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="String">Toza Natural Fruit Juices</Data>
+                </Cell>
+                <Cell ss:StyleID="s69">
+                    <Data ss:Type="String">Indonesia</Data>
+                </Cell>
+            </Row>
+        </Table>
+        <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+            <Print>
+                <ValidPrinterInfo/>
+                <PaperSizeIndex>9</PaperSizeIndex>
+                <HorizontalResolution>300</HorizontalResolution>
+                <VerticalResolution>300</VerticalResolution>
+            </Print>
+            <Selected/>
+            <ProtectObjects>False</ProtectObjects>
+            <ProtectScenarios>False</ProtectScenarios>
+        </WorksheetOptions>
+    </Worksheet>
+</Workbook>

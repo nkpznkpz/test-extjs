@@ -1,0 +1,16 @@
+<% if current_user %>
+  <ul id="nav" style="float:right">
+    <li>
+      <%= image_tag("rails.png",:border=> 0,:width=>10,:height=>14) %>
+      <a href="<%=user_path(current_user.id)%>"><%=current_user.name %></a>
+    </li>
+    <li class="icoCircle"><a href="#">2</a></li>
+    <li><a href="#">administrator</a></li>
+    <li><%=link_to "logout",logout_path %></li>
+  </ul>
+<%else%>
+  <ul id="nav" style="text-align:right;">
+    <li><a href="<%=new_user_path%>" id="register" rel="facebox">register</a></li>
+    <li><a href="<%=login_path%>" id="login">login</a></li>
+  </ul>
+<%end%>

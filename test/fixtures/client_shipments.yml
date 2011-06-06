@@ -1,0 +1,35 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  shipment_code: MyString
+  departure_gmt: MyString
+  departure_port: MyString
+  actual_etd: 2010-08-25 11:42:14
+  actual_eta: MyString
+  arrival_gmt: MyString
+  destination_port: MyString
+  transit: 1
+  place_of_delivery: MyString
+  docs_sent_date: 2010-08-25 11:42:14
+  vessel: MyString
+  remark: MyString
+  destination_charge: MyString
+  inco_term_id: 1
+  shipping_status_id: 1
+
+two:
+  shipment_code: MyString
+  departure_gmt: MyString
+  departure_port: MyString
+  actual_etd: 2010-08-25 11:42:14
+  actual_eta: MyString
+  arrival_gmt: MyString
+  destination_port: MyString
+  transit: 1
+  place_of_delivery: MyString
+  docs_sent_date: 2010-08-25 11:42:14
+  vessel: MyString
+  remark: MyString
+  destination_charge: MyString
+  inco_term_id: 1
+  shipping_status_id: 1

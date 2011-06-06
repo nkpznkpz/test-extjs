@@ -1,0 +1,14 @@
+&nbsp;<%= link_to 'All supplier Contracts', supplier_contracts_path  %> >
+<%= link_to 'Contract', supplier_contract_path(@supplier_contract) %> >
+<%= link_to 'PO', supplier_contract_supplier_po_path(@supplier_contract,@supplier_po) %> >
+<%= link_to 'Order', supplier_contract_supplier_po_supplier_order_path(@supplier_contract,@supplier_po,@supplier_order) %>
+<fieldset class="ui-widget ui-corner-all">
+  <legend class="ui-widget ui-widget-header ui-corner-all">supplier Order</legend>
+  <b>supplier SKU : </b><%=h @supplier_order.supplier_sku.sku %>
+  <b>Quantity : </b><%=h @supplier_order.total_quantity %>
+  <b>Request ET : </b><%=h @supplier_order.request_et %>
+  <b>Request ET Type : </b><%=h @supplier_order.request_et_type %>
+  <b>Unit Of Order : </b><%=h @supplier_order.unit_of_order %>
+  <b>Price/Unit : </b><%=h @supplier_order.unit_price %>
+</fieldset>
+<%= render :file => 'supplier_order_fulfillments/index' %>

@@ -1,0 +1,9 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  trader_sku_id: 1
+  supplier_sku_id: 1
+
+two:
+  trader_sku_id: 1
+  supplier_sku_id: 1

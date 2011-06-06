@@ -1,0 +1,97 @@
+<script type="text/javascript">
+  var lastsel;
+  jQuery(document).ready(function(){
+    var mygrid = jQuery("#supplier_shipments").jqGrid({
+      url:'<%=supplier_shipment_grid_view_path %>',
+      editurl:'<%=supplier_shipment_grid_path %>',
+      datatype: "json",
+      colNames:['id','shipment_code','departure_gmt','departure_port','actual_etd','actual_eta','arrival_gmt',
+          'destination_port','transit','place_of_delivery','docs_sent_date','vessel','remark','destination_charge','inco_term_id','shipping_status_id'],
+      colModel:[
+        {name:'id', index:'id',width:30,editable:false,hidden:true},
+        {name:'shipment_code', index:'shipment_code',editrules:{required:true},width:100,editable:true,hidden:true},
+        {name:'departure_gmt', index:'departure_gmt',editable:true,editrules:{required:true},width:100},
+        {name:'departure_port', index:'departure_port',width:100,editable:true},
+        {name:'actual_etd', index:'actual_etd',width:85,editable:true,sorttype:'date'},
+        {name:'actual_eta', index:'actual_eta',width:85,editable:true},
+        {name:'arrival_gmt', index:'arrival_gmt',width:120,editable:true},
+        {name:'destination_port', index:'destination_port',width:120,editable:true},
+        {name:'transit', index:'transit',width:75,editable:true},
+        {name:'place_of_delivery', index:'place_of_delivery',width:120,editable:true},
+        {name:'docs_sent_date', index:'docs_sent_date',width:120,editable:true},
+        {name:'vessel', index:'vessel',width:80,editable:true},
+        {name:'remark', index:'remark',width:80,editable:true},
+        {name:'destination_charge', index:'destination_charge',width:120,editable:true},
+        {name:'inco_term_id', index:'inco_term_id',width:120,editable:true,
+           edittype:'select',editoptions:<%=data_for_sel(IncoTerm.find_name_for_select,:id,:name) %>},
+        {name:'shipping_status_id', index:'shipping_status_id',width:120,editable:true,
+           edittype:'select',editoptions:<%=data_for_sel(ShippingStatus.find_name_for_select,:id,:name) %>}
+      ],
+      pager: '#supplier_shipments_pager',
+      rowNum:10,
+      rowList:[10,25,50,100],
+      imgpath: '/images/jqgrid',
+      sortname: '',
+      viewrecords: true,
+      height: 150,
+      sortorder: '',
+      gridview: false,
+      scrollrows: true,
+      autowidth: false,
+      rownumbers: false,
+      multiselect: false,
+      loadui:'block',
+      ondblClickRow: function(rowid,iRow,iCol,e){
+
+      },
+      subGrid:false,
+      caption: "Listing Supplier Shipment",
+      gridComplete: function(){       
+       $("input:button").button();
+      }
+    })
+    .navGrid('#supplier_shipments_pager',
+    {edit:true,add:true,del:false,search:false,refresh:true},
+    {closeAfterEdit:true,afterSubmit:function(r,data){return afterSubmit(r,data,'edit');},
+      afterShowForm:function(id){
+        jQuery('#FrmGrid_supplier_shipments #actual_etd').datepicker();
+        jQuery('#FrmGrid_supplier_shipments #actual_eta').datepicker();
+        jQuery('#FrmGrid_supplier_shipments #docs_sent_date').datepicker();
+      }
+    },
+    {closeAfterAdd:true,afterSubmit:function(r,data){return afterSubmit(r,data,'add');},
+      afterShowForm:function(id){
+        jQuery('#FrmGrid_supplier_shipments #actual_etd').datepicker();
+        jQuery('#FrmGrid_supplier_shipments #actual_eta').datepicker();
+        jQuery('#FrmGrid_supplier_shipments #docs_sent_date').datepicker();
+      }
+    },
+    {afterSubmit:function(r,data){return afterSubmit(r,data,'delete');}}
+  );
+
+   /*jQuery("#supplier_order_fulfillment_filter").filterGrid(
+    '#supplier_order_fulfillments',
+    {
+      gridModel:false,
+      loadui:'block',
+      gridNames:true,
+      gridToolbar:false,
+      enableSearch:true,
+      enableClear:true,
+      clearButton:'View All',
+      filterModel: [
+        {label:'trader sku', name: 'trader_sku_id', stype: 'text'}
+      ]
+    }); */
+  });
+  function show_redirect(id){
+
+  }
+
+</script>
+
+<div>
+  <div id="supplier_shipment_filter"></div>
+  <table id="supplier_shipments"></table>
+  <div id="supplier_shipments_pager"></div>
+</div>

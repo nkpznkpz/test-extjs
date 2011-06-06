@@ -1,0 +1,497 @@
+<style type="text/css">
+  .desCombo{
+    color:#888888;
+  }
+</style>
+<script type="text/javascript">
+  //create namespace supplier_po/index
+  var sPo = {}; //<<-----------find and replace for you
+  //======================= init all config ==============================
+  sPo.restUrl = {
+    read:'<%= url_for(:controller => 'supplier_pos', :action => 'index') %>',
+    create:'<%= url_for(:controller => 'supplier_pos', :action => 'post_data') %>',
+    update:'<%= url_for(:controller => 'supplier_pos', :action => 'post_data') %>',  // params[:id] != ''
+    destroy:'<%= url_for(:controller => 'supplier_pos', :action => 'post_data') %>',  //--send params[:oper] = 'del'
+    viewDetail: '<%=supplier_contract_supplier_pos_path(params[:id]) %>'
+  };
+
+  sPo.rightClick = function(grid, row, e){
+    var storeItem = grid.getStore();
+    var itemGridRecords = storeItem.getRange(0,storeItem.getCount()-1);
+    e.preventDefault();
+    this.cellMenu = new Ext.menu.Menu({
+      items : [{
+          xtype : 'menuitem',
+          text: 'View Supplier Order',
+          iconCls: 'silk-application_form_magnify',
+          handler:function(){
+            var id = itemGridRecords[row].get('id');
+            document.location = sPo.restUrl.viewDetail+'/'+id;
+          }
+        }, '-', {
+          text: 'Edit',
+          iconCls: 'silk-application-edit',
+          handler: sPo.onEdit
+        }, {
+          text: 'Delete',
+          iconCls: 'silk-delete',
+          handler: sPo.onDelete
+        }]
+    });
+    this.cellMenu.showAt(e.getXY());
+  }
+
+  sPo.readerField =[
+    {name:'id',mapping:'id'},
+    {name:'po',mapping:'po'},
+    {name:'po_date',mapping:'po_date',type: 'date',dateFormat: 'c'},
+    {name:'sum_total_quantity',mapping:'sum_total_quantity'},
+    {name:'currency',mapping:'currency'},
+    {name:'payment_term_id',mapping:'payment_term_id'},
+    {name:'payment_term_name',mapping:'payment_term_name'},
+    {name:'payment_term_day',mapping:'payment_term_day'}
+  ];
+
+  //============column model for grid ======================================
+  sPo.cm = new Ext.grid.ColumnModel({
+    defaults:{
+      sortable:true
+    },
+    columns:[
+      new Ext.grid.RowNumberer(),
+      {
+        header: 'PO Number',
+        width: 250,
+        maxLength: 13,
+        dataIndex: 'po'
+      },
+      {
+        header: 'PO Date',
+        width: 200,
+        dataIndex: 'po_date',
+        renderer: Ext.util.Format.dateRenderer('d-m-Y')
+      },{
+        header: 'Total price',
+        width: 200,
+        maxLength: 13,
+        dataIndex: 'sum_total_quantity',
+        sortable: false
+      },
+      {
+        header: 'Currency',
+        width: 90,
+        dataIndex: 'currency'
+      },
+      {
+        header: 'Payment Term',
+        width: 150,
+        dataIndex: 'payment_term_id',
+        renderer:function(val, meta, record) {
+          return record.data.payment_term_name;
+        }
+      },
+      {
+        header: 'Payment Term Day',
+        width: 150,
+        dataIndex: 'payment_term_day'
+      }
+    ]
+  });
+
+  sPo.filterField = [{ //---------map same Json Reader name
+      type: 'string',
+      dataIndex: 'po'
+    }, {
+      type: 'date',
+      dataIndex: 'po_date',
+      dateFormat: 'Y-m-d H:i:s'
+    }, {
+      type: 'string',
+      dataIndex: 'currency'
+    }, {
+      type: 'string',
+      // defaultValue:true,
+      dataIndex: 'payment_term_id'
+    }, {
+      type: 'string',
+      dataIndex: 'payment_term_day'
+    }];
+
+  sPo.formItem = [ //--------item in form ex.combobox,textfield
+    {
+      xtype:'hidden',
+      name:'id'
+    }, {
+      xtype: 'textfield',
+      fieldLabel: 'PO Number',
+      name: 'po'
+    }, {
+      xtype:'datefield',
+      fieldLabel: 'PO Date',
+      name: 'po_date',
+      format:'d-m-Y'
+    }, {
+      fieldLabel: 'Currency',
+      name:'currency',
+      xtype: 'combo',
+      typeAhead: false,
+      value: 'Baht',
+      mode: 'local',
+      triggerAction: 'all',
+      forceSelection:true,
+      selectOnFocus:true,
+      store: new Ext.data.ArrayStore({
+        fields: [
+          'id',
+          'name'
+        ],
+        data: [['US', 'US'], ['Baht', 'Baht']]
+      }),
+      hiddenName:'currency',
+      valueField: 'id',
+      displayField: 'name',
+      valueField: 'id',
+      displayField: 'name'
+    }, {
+      xtype: 'combo',
+      name:'payment_term_id',
+      fieldLabel: 'Payment Term',
+      typeAhead: false,
+      triggerAction: 'all',
+      lazyRender:true,
+      forceSelection:true,
+      selectOnFocus:true,
+      store: new Ext.data.Store({ //<----this store for Combobox
+        url:'<%= url_for(:controller => 'supplier_pos', :action => 'get_all_payment_term') %>',
+        mode: 'remote',
+        autoLoad: true,
+        reader:new Ext.data.JsonReader({
+          totalProperty: 'total',
+          root: 'data',
+          fields:[
+            {name:'id',mapping:'id'},
+            {name:'name',mapping:'name'}
+          ]
+        })
+      }),
+      hiddenName:'payment_term_id',
+      valueField: 'id',
+      displayField: 'name'
+    } , {
+      xtype: 'textfield',
+      fieldLabel: 'Payment Term Day',
+      name: 'payment_term_day'
+    }
+  ];
+
+  //===============title text for grid
+  sPo.text = {
+    grid: 'Listing Supplier PO',
+    addWin: 'Add Supplier PO',
+    editWin: 'Edit Supplier PO',
+    displayFooter : 'Displaying Supplier PO {0} - {1} of {2}',
+    emptyDisplayFooter: 'No Supplier PO to display'
+  };
+  sPo.errorConfig = {
+    title:'Error',
+    msg: 'Please Select Row.',
+    buttons: Ext.Msg.OK,
+    animEl: 'logo',
+    icon: Ext.MessageBox.ERROR
+  }
+
+  Ext.onReady(function(){
+    var limit = 10;
+    var gridMask = new Ext.LoadMask('supplier_po_grid', {msg:"Loading..."});
+    //============== Action Handler ======================
+
+    sPo.onAdd = function(){ //event on click add on grid menu
+      sPo.addForm.getForm().reset();
+      sPo.addForm.getForm().setValues({currency:'Baht'});
+      sPo.addForm.getForm().clearInvalid();
+      sPo.addWin.show();
+    }
+    sPo.onEdit = function(){ //event on click add on grid menu
+      var r = sPo.grid.getSelectionModel().getSelected();
+      if(r!=undefined){
+        sPo.editForm.getForm().reset();
+        sPo.addForm.getForm().setValues({currency:'Baht'});
+        sPo.editForm.getForm().clearInvalid();
+        var rec = sPo.store.getById(''+r.data.id);
+        sPo.editForm.getForm().loadRecord(rec);
+        sPo.editWin.show();
+      }else{
+        Ext.Msg.show(sPo.errorConfig);
+      }
+    }
+    sPo.onDelete = function(){
+      var r = sPo.grid.getSelectionModel().getSelected();
+      if(r!=undefined){
+        var rec = sPo.store.getById(''+r.data.id);
+        Ext.MessageBox.confirm('Delete', 'Are you sure?', function(btn){
+          if(btn == 'yes'){
+            gridMask.show();
+            var conn = new Ext.data.Connection();
+            conn.request({
+              url: sPo.restUrl.destroy,
+              //method: 'POST',
+              params: {
+                oper:'del',
+                id:r.data.id
+              },
+              success: function(response, options){
+                var resText = Ext.util.JSON.decode(response.responseText);
+                gridMask.hide();
+                if(resText.success){
+                  sPo.store.reload();
+                }else{
+                  Ext.MessageBox.show({
+                    title:'Error',
+                    msg: resText.errors.base,
+                    buttons: Ext.Msg.OK,
+                    icon: Ext.MessageBox.ERROR
+                  });
+                }
+              }
+              //  failure: function(response, options){ alert('Delete operation failed.'); }
+            });
+
+          }
+        });
+      }else{
+        Ext.Msg.show(sPo.errorConfig);
+      }
+    }
+    //================== End Handler ===================
+    Ext.QuickTips.init();
+    sPo.writer = new Ext.data.JsonWriter({
+      encode: true,
+      writeAllFields: false
+    });
+    sPo.reader = new Ext.data.JsonReader({
+      totalProperty: 'total',
+      successProperty: 'success',
+      idProperty: 'id',
+      root: 'data',
+      messageProperty: 'message',
+      fields: sPo.readerField
+    });
+    //================== store =====================
+    sPo.store = new Ext.data.GroupingStore({
+      url: sPo.restUrl.read,
+      reader: sPo.reader,
+      writer: sPo.writer,
+      autoSave: false,
+      remoteSort: true,
+      remoteGroup:true,
+      baseParams:{
+        start: 0,
+        limit: limit,
+        supplier_contract_id:<%= params[:id] %>
+      },
+      autoLoad:true
+    });
+
+    //==================  filter =====================
+    sPo.filters = new Ext.ux.grid.GridFilters({
+      encode: false, // json encode the filter query
+      updateBuffer: 1,
+      filters: sPo.filterField
+    });
+
+    sPo.addForm = new Ext.form.FormPanel({
+      id: 'sPoAddForm',
+      iconCls: 'silk-user',
+      frame: true,
+      labelWidth: 120,
+      labelAlign: 'right',
+      frame: true,
+      width: 400,
+      defaults:{
+        width:200
+      },
+      items: sPo.formItem,
+      buttons:[
+        {
+          id: 'sPoBtnAddFormSave',
+          text:'Save',
+          handler:function(){ //handler button click
+            sPo.addForm.getForm().submit({
+              url: sPo.restUrl.create,
+              params:{
+                is_add: '1',
+                supplier_contract_id:<%= params[:id] %>
+              },
+              waitMsg:'Saving...',
+              success: function(form, action) {
+                sPo.addWin.hide();
+                sPo.store.load({
+                  params:{
+                    sort:'supplier_pos.id',
+                    dir:'DESC'
+                  }
+                });
+              },
+              failure: function(form, action) {
+                var resText = Ext.util.JSON.decode(action.response.responseText);
+                console.log(resText);
+                gridMask.hide();
+                if(resText.success){
+                  cIndex.store.reload();
+                }else{
+                  if(resText.errors.base!=null){
+                    Ext.MessageBox.show({
+                      title:'Error',
+                      msg: resText.errors.base,
+                      buttons: Ext.Msg.OK,
+                      icon: Ext.MessageBox.ERROR
+                    });
+                  }
+                }
+              }
+            });
+          }
+        }, {
+          id: 'sPoBtnAddFormCancel',
+          text:'Cancel',
+          handler:function(){
+            sPo.addWin.hide();
+          }
+        }
+      ]
+    });
+
+    sPo.editForm = new Ext.form.FormPanel({
+      id: 'sPoEditForm',
+      iconCls: 'silk-user',
+      frame: true,
+      labelAlign: 'right',
+      frame: true,
+      width: 400,
+      defaultType: 'textfield',
+      defaults:{
+        width:200
+      },
+      items: sPo.formItem,
+      buttons:[
+        {
+          id: 'sPoBtnEditFormSave',
+          text:'Save',
+          handler:function(){
+            sPo.editForm.getForm().submit({
+              url: sPo.restUrl.update,
+              params:{
+                supplier_contract_id:<%= params[:id] %>
+              },
+              waitMsg:'Saving...',
+              success: function(form, action) {
+                sPo.editWin.hide();
+                sPo.store.reload();
+              }
+            });
+          }
+        }, {
+          id: 'sPoBtnEditFormCancel',
+          text:'Cancel',
+          handler:function(){
+            sPo.editWin.hide();
+          }
+        }
+      ]
+    });
+
+    sPo.addWin = new Ext.Window({
+      id: 'sPoAddWin',
+      title: sPo.text.addWin,
+      closeAction:'hide',
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        sPo.addForm
+      ]
+    });
+
+    sPo.editWin = new Ext.Window({
+      id: 'sPoEditWin',
+      title: sPo.text.editWin,
+      closeAction:'hide',
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        sPo.editForm
+      ]
+    });
+
+    sPo.grid = new Ext.grid.GridPanel({
+      id: 'sPoGrid',
+      renderTo: 'supplier_po_grid',
+      title: sPo.text.grid,
+      iconCls: 'silk-application-view_columns',
+      height: 350,
+      store: sPo.store,
+      loadMask: true,
+      stripeRows: true,
+      enableRowBody: true,
+      plugins: [sPo.filters],
+      view: new Ext.grid.GroupingView({
+        forceFit:true,
+        groupTextTpl: '{text} ({[values.rs.length]} {[values.rs.length > 1 ? "Items" : "Item"]})'
+      }),
+      colModel:sPo.cm,
+      tbar: [{
+        id: 'sPoBtnGridAdd',
+          text: 'Add',
+          iconCls: 'silk-add',
+          handler: sPo.onAdd
+        }, '-', {
+          id: 'sPoBtnGridEdit',
+          text: 'Edit',
+          iconCls: 'silk-application-edit',
+          handler: sPo.onEdit
+        }, '-', {
+          id: 'sPoBtnGridDelete',
+          text: 'Delete',
+          iconCls: 'silk-delete',
+          handler: sPo.onDelete
+        },'->',
+        {
+          id: 'sPoBtnGridClearFilter',
+          text: 'Clear Filter Data',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            sPo.grid.filters.clearFilters();
+          }
+        },'-',
+        {
+          id: 'sPoBtnGridClearGrouping',
+          text: 'Clear Grouping',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            sPo.store.clearGrouping();
+          }
+        }
+      ],
+      listeners : {
+        'rowcontextmenu' : function(grid, rowIndex, e){
+          var sm = grid.getSelectionModel();
+          sm.selectRow(rowIndex, sm.isSelected(rowIndex));
+          sPo.rightClick(grid, rowIndex, e);
+        }
+      },
+      bbar:
+        new Ext.PagingToolbar({
+        pageSize: limit,
+        store: sPo.store,
+        displayInfo: true,
+        displayMsg: sPo.text.displayFooter ,
+        emptyMsg: sPo.text.emptyDisplayFooter,
+        plugins: [sPo.filters]
+      })
+    });
+  });
+</script>
+<div id="supplier_po_grid"></div>

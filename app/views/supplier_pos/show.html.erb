@@ -1,0 +1,15 @@
+&nbsp;<%= link_to 'All Supplier Contracts', supplier_contracts_path  %> >
+<%= link_to 'Contract', supplier_contract_path(@supplier_contract) %> >
+<%= link_to 'PO', supplier_contract_supplier_po_path(@supplier_pos) %>
+
+<fieldset class="ui-widget ui-corner-all">
+  <legend class="ui-widget ui-widget-header ui-corner-all">Supplier PO <%=h @supplier_po.po %></legend>  
+  <b>PO : </b><%=h @supplier_po.po %>
+  <b>PO Date : </b><%=h to_date_str(@supplier_po.po_date) %>
+  <b>Total Price : </b><%=h @sum_total_quantity %><br/>
+  <b>Currency : </b><%=h @supplier_po.currency %>
+  <b>Payment term : </b><%=h @supplier_po.payment_term.name %>
+  <b>Payment term day : </b><%=h @supplier_po.payment_term_day %>
+</fieldset>
+
+<%= render :file => 'supplier_orders/index' %>

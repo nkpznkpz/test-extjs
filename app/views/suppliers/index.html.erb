@@ -1,0 +1,443 @@
+<style type="text/css">
+  .desCombo{
+    color:#888888;
+  }
+</style>
+<script type="text/javascript">
+  //create namespace supplier/index
+  var sIndex = {}; //<<-----------find and replace for you
+  //======================= init all config ==============================
+  sIndex.restUrl = {
+    read:'<%= suppliers_path %>/index',
+    create:'<%= url_for(:controller => 'suppliers', :action => 'post_data') %>',
+    update:'<%= url_for(:controller => 'suppliers', :action => 'post_data') %>',  // params[:id] != ''
+    destroy:'<%= url_for(:controller => 'suppliers', :action => 'post_data') %>'  //--send params[:oper] = 'del'
+  };
+  
+  sIndex.rightClick = function(grid, row, e){
+    var storeItem = grid.getStore();
+    var itemGridRecords = storeItem.getRange(0,storeItem.getCount()-1);
+    e.preventDefault();
+    this.cellMenu = new Ext.menu.Menu({
+      items : [{
+          text: 'Edit',
+          iconCls: 'silk-application-edit',
+          handler: sIndex.onEdit
+        }, {
+          text: 'Delete',
+          iconCls: 'silk-delete',
+          handler: sIndex.onDelete
+        }]
+    });
+    this.cellMenu.showAt(e.getXY());
+  }
+
+  sIndex.readerField =[
+    {name:'id',mapping:'id'},
+    {name:'name',mapping:'name'},
+    {name:'address',mapping:'address'},
+    {name:'country_name',mapping:'country_name'},
+    {name:'status',mapping:'status'}
+  ];
+
+  //============column model for grid ======================================
+  sIndex.cm = new Ext.grid.ColumnModel({
+    defaults:{
+      sortable:true
+    },
+    columns:[
+      new Ext.grid.RowNumberer(),
+      {
+        header: 'Supplier Name',
+        width: 300,
+        dataIndex: 'name'
+      },
+      {
+        header: 'Country Name',
+        width: 250,
+        dataIndex: 'country_name'
+      },
+      {
+        header: 'Address',
+        width: 300,
+        dataIndex: 'address'
+      },
+      {
+        header: 'Status',
+        width: 80,
+        dataIndex: 'status',
+        renderer:function(val, meta, record) {
+          return val == true ? 'Active' : 'Inactive';
+        }
+      }
+    ]
+  });
+
+  sIndex.filterField = [{ //---------map same Json Reader name
+      type: 'string',
+      dataIndex: 'name'
+    }, {
+      type: 'string',
+      dataIndex: 'country_name'
+    }, {
+      type: 'string',
+      dataIndex: 'address'
+    }, {
+      type: 'boolean',
+      defaultValue:true,
+      dataIndex: 'status',
+      yesText:'Active',
+      noText:'Inactive'
+    }];
+
+  sIndex.formItem = [ //--------item in form ex.combobox,textfield
+    {
+      xtype:'hidden',
+      name:'id'
+    }, {
+      xtype: 'textfield',
+      fieldLabel: 'Supplier Name',
+      name: 'name'
+    }, {
+      xtype:'textarea',
+      fieldLabel: 'Address',
+      name: 'address'
+    }, {
+      fieldLabel: 'Country',
+      name:'country_name',
+      xtype: 'combo',
+      typeAhead: false,
+      //  allowBlank:false,
+      triggerAction: 'all',
+      minChars:1,
+      forceSelection:true,
+      selectOnFocus:true,
+      store: new Ext.data.Store({ //<----this store for Combobox
+        url:'<%= url_for(:controller => 'clients', :action => 'get_country') %>',
+        reader:new Ext.data.JsonReader({
+          totalProperty: 'total',
+          idProperty: 'id',
+          root: 'data',
+          fields:[
+            {name:'id',mapping:'id'},
+            {name:'name',mapping:'name'}
+          ]
+        })
+      }),
+      valueField: 'name',
+      displayField: 'name'
+    }, {
+      xtype: 'combo',
+      name:'status',
+      fieldLabel: 'Status',
+      value:true,
+      typeAhead: false,
+      triggerAction: 'all',
+      lazyRender:true,
+      forceSelection:true,
+      selectOnFocus:true,
+      mode: 'local',
+      store: new Ext.data.ArrayStore({
+        fields: [
+          'id',
+          'name',
+          'description'
+        ],
+        data: [[true, 'Active','Testtest'], [false, 'Inactive','testttttt']]
+      }),
+      hiddenName:'status',
+      valueField: 'id',
+      displayField: 'name',
+      tpl:'<tpl for="."><div class="x-combo-list-item">{name}'+
+        '<div class="desCombo"><b>Description : </b>{description}</div>'+
+        '</div></tpl>'
+    }
+  ];
+
+  //===============title text for grid
+  sIndex.text = {
+    grid: 'Listing Supplier',
+    addWin: 'Add Supplier',
+    editWin: 'Edit Supplier',
+    displayFooter : 'Displaying Suppliers {0} - {1} of {2}',
+    emptyDisplayFooter: 'No Suppliers to display'
+  };
+  sIndex.errorConfig = {
+    title:'Error',
+    msg: 'Please Select Row.',
+    buttons: Ext.Msg.OK,
+    animEl: 'logo',
+    icon: Ext.MessageBox.ERROR
+  }
+
+  Ext.onReady(function(){
+    var limit = 10;
+    var gridMask = new Ext.LoadMask('supplier_grid', {msg:"Loading..."});
+    //============== Action Handler ======================
+
+    sIndex.onAdd = function(){ //event on click add on grid menu
+      sIndex.addForm.getForm().reset();
+      sIndex.addForm.getForm().setValues({status:1,country:''});
+      sIndex.addForm.getForm().clearInvalid();
+      sIndex.addWin.show();
+    }
+    sIndex.onEdit = function(){ //event on click add on grid menu
+      var r = sIndex.grid.getSelectionModel().getSelected();
+      if(r!=undefined){
+        sIndex.editForm.getForm().reset();
+        sIndex.editForm.getForm().setValues({status:1,name:'',country:''});
+        sIndex.editForm.getForm().clearInvalid();
+        var rec = sIndex.store.getById(''+r.data.id);
+        sIndex.editForm.getForm().loadRecord(rec);
+        sIndex.editWin.show();
+      }else{
+        Ext.Msg.show(sIndex.errorConfig);
+      }
+    }
+    sIndex.onDelete = function(){
+      var r = sIndex.grid.getSelectionModel().getSelected();
+      if(r!=undefined){
+        var rec = sIndex.store.getById(''+r.data.id);
+        Ext.MessageBox.confirm('Delete', 'Are you sure?', function(btn){
+          if(btn == 'yes'){
+            gridMask.show();
+            var conn = new Ext.data.Connection();
+            conn.request({
+              url: sIndex.restUrl.destroy,
+              //method: 'POST',
+              params: {
+                oper:'del',
+                id:r.data.id
+              },
+              success: function(response, options){
+                var resText = Ext.util.JSON.decode(response.responseText);
+                gridMask.hide();
+                if(resText.success){
+                  sIndex.store.reload();
+                }else{
+                  Ext.MessageBox.show({
+                    title:'Error',
+                    msg: resText.errors.base,
+                    buttons: Ext.Msg.OK,
+                    icon: Ext.MessageBox.ERROR
+                  });
+                }
+              }
+              // failure: function(response, options){ alert('Delete operation failed.'); }
+            });
+
+          }
+        });
+      }else{
+        Ext.Msg.show(sIndex.errorConfig);
+      }
+    }
+    //================== End Handler ===================
+    Ext.QuickTips.init();
+    sIndex.writer = new Ext.data.JsonWriter({
+      encode: true,
+      writeAllFields: false
+    });
+    sIndex.reader = new Ext.data.JsonReader({
+      totalProperty: 'total',
+      successProperty: 'success',
+      idProperty: 'id',
+      root: 'data',
+      messageProperty: 'message',
+      fields: sIndex.readerField
+    });
+    //================== store =====================
+    sIndex.store = new Ext.data.GroupingStore({
+      url: sIndex.restUrl.read,
+      reader: sIndex.reader,
+      writer: sIndex.writer,
+      autoSave: false,
+      remoteSort: true,
+      remoteGroup:true,
+      baseParams:{
+        start: 0,
+        limit: limit
+      },
+      autoLoad:true
+    });
+
+    //==================  filter =====================
+    sIndex.filters = new Ext.ux.grid.GridFilters({
+      encode: false, // json encode the filter query
+      updateBuffer: 1,
+      filters: sIndex.filterField
+    });
+
+    sIndex.addForm = new Ext.form.FormPanel({
+    id: 'sIndexAddForm',
+      iconCls: 'silk-user',
+      frame: true,
+      labelAlign: 'right',
+      frame: true,
+      width: 400,
+      defaults:{
+        width:200
+      },
+      items: sIndex.formItem,
+      buttons:[
+        {
+        id: 'sIndexBtnAddFormSave',
+          text:'Save',
+          handler:function(){ //handler button click
+            sIndex.addForm.getForm().submit({
+              url: sIndex.restUrl.create,
+              params:{
+                is_add: '1'
+              },
+              waitMsg:'Saving...',
+              success: function(form, action) {
+                sIndex.addWin.hide();
+                sIndex.store.load({
+                  params:{
+                    sort:'id',
+                    dir:'DESC'
+                  }
+                });
+              }
+            });
+          }
+        }, {
+        id: 'sIndexbtnAddFormCancel',
+          text:'Cancel',
+          handler:function(){
+            sIndex.addWin.hide();
+          }
+        }
+      ]
+    });
+
+    sIndex.editForm = new Ext.form.FormPanel({
+    id: 'sIndexEditForm',
+      iconCls: 'silk-user',
+      frame: true,
+      labelAlign: 'right',
+      frame: true,
+      width: 400,
+      defaultType: 'textfield',
+      defaults:{
+        width:200
+      },
+      items: sIndex.formItem,
+      buttons:[
+        {
+          id: 'sIndexBtnEditFormSave',
+          text:'Save',
+          handler:function(){
+            sIndex.editForm.getForm().submit({
+              url: sIndex.restUrl.update,
+              waitMsg:'Saving...',
+              success: function(form, action) {
+                sIndex.editWin.hide();
+                sIndex.store.reload();
+              }
+            });
+          }
+        }, {
+        id: 'sIndexBtnEditFormCancel',
+          text:'Cancel',
+          handler:function(){
+            sIndex.editWin.hide();
+          }
+        }
+      ]
+    });
+
+    sIndex.addWin = new Ext.Window({
+    id: 'sIndexAddWin',
+      title: sIndex.text.addWin,
+      closeAction:'hide',
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        sIndex.addForm
+      ]
+    });
+
+    sIndex.editWin = new Ext.Window({
+    id: 'sIndexEditWin',
+      title: sIndex.text.editWin,
+      closeAction:'hide',
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        sIndex.editForm
+      ]
+    });
+
+    sIndex.grid = new Ext.grid.GridPanel({
+    id: 'sIndexGrid',
+      renderTo: 'supplier_grid',
+      title: sIndex.text.grid,
+      iconCls: 'silk-application-view_columns',
+      height: 350,
+      store: sIndex.store,
+      loadMask: true,
+      stripeRows: true,
+      plugins: [sIndex.filters],
+      view: new Ext.grid.GroupingView({
+        forceFit:true,
+        groupTextTpl: '{text} ({[values.rs.length]} {[values.rs.length > 1 ? "Items" : "Item"]})'
+      }),
+      colModel:sIndex.cm,
+      tbar: [{
+        id: 'sIndexBtnGridAdd',
+          text: 'Add',
+          iconCls: 'silk-add',
+          handler: sIndex.onAdd
+        }, '-', {
+          id: 'sIndexBtnGridEdit',
+          text: 'Edit',
+          iconCls: 'silk-application-edit',
+          handler: sIndex.onEdit
+        }, '-', {
+          id: 'sIndexBtnGridDelete',
+          text: 'Delete',
+          iconCls: 'silk-delete',
+          handler: sIndex.onDelete
+        },'->',
+        {
+          id: 'sIndexBtnGridClearFilter',
+          text: 'Clear Filter Data',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            sIndex.grid.filters.clearFilters();
+          }
+        },'-',
+        {
+          id: 'sIndexBtnGridClearGrouping',
+          text: 'Clear Grouping',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            sIndex.store.clearGrouping();
+          }
+        }
+      ],
+      listeners : {
+        'rowcontextmenu' : function(grid, rowIndex, e){
+          var sm = grid.getSelectionModel();
+          sm.selectRow(rowIndex, sm.isSelected(rowIndex));
+          sIndex.rightClick(grid, rowIndex, e);
+        }
+      },
+      bbar:
+        new Ext.PagingToolbar({
+        pageSize: limit,
+        store: sIndex.store,
+        displayInfo: true,
+        displayMsg: sIndex.text.displayFooter ,
+        emptyMsg: sIndex.text.emptyDisplayFooter,
+        plugins: [sIndex.filters]
+      })
+    });
+  });
+</script>
+<div id="supplier_grid"></div>

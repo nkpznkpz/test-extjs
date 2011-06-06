@@ -1,0 +1,467 @@
+<style type="text/css">
+  .desCombo{
+    color:#888888;
+  }
+</style>
+<script type="text/javascript">
+  //create namespace supplier_po/index
+  var scr = {}; //<<-----------find and replace for you
+  //======================= init all config ==============================
+  scr.restUrl = {
+    read:'<%= url_for(:controller => 'supplier_contact_records', :action => 'index') %>',
+    create:'<%= url_for(:controller => 'supplier_contact_records', :action => 'post_data') %>',
+    update:'<%= url_for(:controller => 'supplier_contact_records', :action => 'post_data') %>',  // params[:id] != ''
+    destroy:'<%= url_for(:controller => 'supplier_contact_records', :action => 'post_data') %>',  //--send params[:oper] = 'del'
+    viewDetail: ''
+  };
+
+  scr.rightClick = function(grid, row, e){
+    var storeItem = grid.getStore();
+    var itemGridRecords = storeItem.getRange(0,storeItem.getCount()-1);
+    e.preventDefault();
+    this.cellMenu = new Ext.menu.Menu({
+      items : [{
+          text: 'Edit',
+          iconCls: 'silk-application-edit',
+          handler: scr.onEdit
+        }, {
+          text: 'Delete',
+          iconCls: 'silk-delete',
+          handler: scr.onDelete
+        }]
+    });
+    this.cellMenu.showAt(e.getXY());
+  }
+
+  scr.readerField =[
+    {name:'id',mapping:'id'},
+    {name:'product_id',mapping:'product_id'},
+    {name:'product_name',mapping:'product_name'},
+    {name:'total1',mapping:'total1'},
+    {name:'remainder',mapping:'remainder'},
+    {name:'request_date',mapping:'request_date',type: 'date',dateFormat: 'c'}
+  ];
+  // define a custom summary function
+  Ext.ux.grid.GroupSummary.Calculations['totalRemainder'] = function(v, record, field){
+    return v + record.data.total1;
+  };
+  //============column model for grid ======================================
+  scr.cm = new Ext.grid.ColumnModel({
+    defaults:{
+      sortable:true
+    },
+    columns:[
+      new Ext.grid.RowNumberer(),
+      {
+        header: 'Product',
+        width: 250,
+        dataIndex: 'product_id',
+        summaryType: 'count',
+        hideable: false,
+        renderer:function(val, meta, record) {
+          return record.data.product_name;
+        },
+        summaryRenderer: function(v, params, data){
+          return ((v === 0 || v > 1) ? '(' + v +' Products)' : '(1 Products)');
+        }
+      },
+      {
+        header: 'Total',
+        width: 200,
+        dataIndex: 'total1',
+        sortable: false,
+        summaryType: 'totalRemainder',
+        summaryRenderer: function(v, params, data){
+          return 'Total : ' + v
+        }
+      },
+      {
+        header: 'Remainder',
+        width: 200,
+        dataIndex: 'remainder',
+        sortable: false,
+        summaryType: 'max',
+        summaryRenderer: function(v, params, data){
+          return 'Remainder : ' + v
+        }
+      },
+      {
+        header: 'Request Date',
+        width: 200,
+        dataIndex: 'request_date',
+        sortable: false,
+        renderer: Ext.util.Format.dateRenderer('d-m-Y')
+      }
+    ]
+  });
+
+  scr.filterField = [{ //---------map same Json Reader name
+      type: 'string',
+      dataIndex: 'product_id'
+    }, {
+      type: 'numeric',
+      dataIndex: 'total1'
+    }, {
+      type: 'date',
+      dateFormat: 'Y-m-d H:i:s',
+      dataIndex: 'request_date'
+    }];
+
+  scr.formItem = [ //--------item in form ex.combobox,textfield
+    {
+      xtype:'hidden',
+      name:'id'
+    }, {
+      xtype: 'combo',
+      name:'product_id',
+      fieldLabel: 'Product',
+      typeAhead: false,
+      triggerAction: 'all',
+      lazyRender:true,
+      forceSelection:true,
+      selectOnFocus:true,
+      store: new Ext.data.Store({ //<----this store for Combobox
+        url:'<%= url_for(:controller => 'products', :action => 'get_all_product') %>',
+        mode: 'remote',
+        autoLoad: true,
+        reader:new Ext.data.JsonReader({
+          totalProperty: 'total',
+          root: 'data',
+          fields: [
+            {name:'id',mapping:'id'},
+            {name:'name',mapping:'name'}
+          ]
+        })
+      }),
+      hiddenName:'product_id',
+      valueField: 'id',
+      displayField: 'name'
+    }, {
+      xtype: 'textfield',
+      fieldLabel: 'Total',
+      name: 'total1'
+    }, {
+      xtype: 'datefield',
+      fieldLabel: 'Request Date',
+      name: 'request_date'
+    }
+  ];
+
+  //===============title text for grid
+  scr.text = {
+    grid: 'Listing Supplier Contact Record',
+    addWin: 'Add Supplier Contact Record',
+    editWin: 'Edit Supplier Contact Record',
+    displayFooter : 'Displaying Supplier Contact Record {0} - {1} of {2}',
+    emptyDisplayFooter: 'No Supplier Contact Record to display'
+  };
+  scr.errorConfig = {
+    title:'Error',
+    msg: 'Please Select Row.',
+    buttons: Ext.Msg.OK,
+    animEl: 'logo',
+    icon: Ext.MessageBox.ERROR
+  }
+
+  Ext.onReady(function(){
+    var limit = 1000;
+    var gridMask = new Ext.LoadMask('supplier_contact_record_grid', {msg:"Loading..."});
+    //============== Action Handler ======================
+
+    scr.onAdd = function(){ //event on click add on grid menu
+      scr.addForm.getForm().reset();
+      scr.addForm.getForm().clearInvalid();
+      scr.addWin.show();
+    }
+    scr.onEdit = function(){ //event on click add on grid menu
+      var r = scr.grid.getSelectionModel().getSelected();
+      if(r!=undefined){
+        scr.editForm.getForm().reset();
+        scr.editForm.getForm().clearInvalid();
+        var rec = scr.store.getById(''+r.data.id);
+        scr.editForm.getForm().loadRecord(rec);
+        scr.editWin.show();
+      }else{
+        Ext.Msg.show(scr.errorConfig);
+      }
+    }
+    scr.onDelete = function(){
+      var r = scr.grid.getSelectionModel().getSelected();
+      if(r!=undefined){
+        var rec = scr.store.getById(''+r.data.id);
+        Ext.MessageBox.confirm('Delete', 'Are you sure?', function(btn){
+          if(btn == 'yes'){
+            gridMask.show();
+            var conn = new Ext.data.Connection();
+            conn.request({
+              url: scr.restUrl.destroy,
+              //method: 'POST',
+              params: {
+                oper:'del',
+                id:r.data.id
+              },
+              success: function(response, options){
+                var resText = Ext.util.JSON.decode(response.responseText);
+                gridMask.hide();
+                if(resText.success){
+                  scr.store.reload();
+                }else{
+                  Ext.MessageBox.show({
+                    title:'Error',
+                    msg: resText.errors.base,
+                    buttons: Ext.Msg.OK,
+                    icon: Ext.MessageBox.ERROR
+                  });
+                }
+              }
+              //  failure: function(response, options){ alert('Delete operation failed.'); }
+            });
+
+          }
+        });
+      }else{
+        Ext.Msg.show(scr.errorConfig);
+      }
+    }
+    //================== End Handler ===================
+    Ext.QuickTips.init();
+    scr.writer = new Ext.data.JsonWriter({
+      encode: true,
+      writeAllFields: false
+    });
+    scr.reader = new Ext.data.JsonReader({
+      totalProperty: 'total',
+      successProperty: 'success',
+      idProperty: 'id',
+      root: 'data',
+      messageProperty: 'message',
+      fields: scr.readerField
+    });
+    //================== store =====================
+    scr.store = new Ext.data.GroupingStore({
+      url: scr.restUrl.read,
+      reader: scr.reader,
+      writer: scr.writer,
+      autoSave: false,
+      remoteSort: true,
+      remoteGroup:true,
+      groupField: 'product_id',
+      baseParams:{
+        start: 0,
+        limit: limit,
+        supplier_contract_id:<%= params[:id] %>
+      },
+      autoLoad:true
+    });
+
+    //==================  filter =====================
+    scr.filters = new Ext.ux.grid.GridFilters({
+      encode: false, // json encode the filter query
+      updateBuffer: 1,
+      filters: scr.filterField
+    });
+
+    scr.addForm = new Ext.form.FormPanel({
+      id: 'scrAddForm',
+      iconCls: 'silk-user',
+      frame: true,
+      labelWidth: 120,
+      labelAlign: 'right',
+      frame: true,
+      width: 400,
+      defaults:{
+        width:200
+      },
+      items: scr.formItem,
+      buttons:[
+        {
+          id: 'scrBtnAddFormSave',
+          text:'Save',
+          handler:function(){ //handler button click
+            scr.addForm.getForm().submit({
+              url: scr.restUrl.create,
+              params:{
+                is_add: '1',
+                supplier_contract_id:<%= params[:id] %>
+              },
+              waitMsg:'Saving...',
+              success: function(form, action) {
+                scr.addWin.hide();
+                scr.store.load({
+                  params:{
+                    sort:'product_id',
+                    dir:'asc'
+                  }
+                });
+              },
+              failure: function(form, action) {
+                var resText = Ext.util.JSON.decode(action.response.responseText);
+                console.log(resText);
+                gridMask.hide();
+                if(resText.success){
+                  cIndex.store.reload();
+                }else{
+                  Ext.MessageBox.show({
+                    title:'Error',
+                    msg: resText.errors.base,
+                    buttons: Ext.Msg.OK,
+                    icon: Ext.MessageBox.ERROR
+                  });
+                }
+              }
+            });
+          }
+        }, {
+          id: 'scrBtnAddFormCancel',
+          text:'Cancel',
+          handler:function(){
+            scr.addWin.hide();
+          }
+        }
+      ]
+    });
+
+    scr.editForm = new Ext.form.FormPanel({
+      id: 'scrEditForm',
+      iconCls: 'silk-user',
+      frame: true,
+      labelAlign: 'right',
+      frame: true,
+      width: 400,
+      defaultType: 'textfield',
+      defaults:{
+        width:200
+      },
+      items: scr.formItem,
+      buttons:[
+        {
+          id: 'scrBtnEditFormSave',
+          text:'Save',
+          handler:function(){
+            scr.editForm.getForm().submit({
+              url: scr.restUrl.update,
+              params:{
+                supplier_contract_id:<%= params[:id] %>
+              },
+              waitMsg:'Saving...',
+              success: function(form, action) {
+                scr.editWin.hide();
+                scr.store.reload();
+              },
+              failure: function(form, action) {
+                var resText = Ext.util.JSON.decode(action.response.responseText);
+                console.log(resText);
+                gridMask.hide();
+                if(resText.success){
+                  cIndex.store.reload();
+                }else{
+                  Ext.MessageBox.show({
+                    title:'Error',
+                    msg: resText.errors.base,
+                    buttons: Ext.Msg.OK,
+                    icon: Ext.MessageBox.ERROR
+                  });
+                }
+              }
+            });
+          }
+        }, {
+          id: 'scrBtnEditFormCancel',
+          text:'Cancel',
+          handler:function(){
+            scr.editWin.hide();
+          }
+        }
+      ]
+    });
+
+    scr.addWin = new Ext.Window({
+      id: 'scrAddWin',
+      title: scr.text.addWin,
+      closeAction:'hide',
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        scr.addForm
+      ]
+    });
+
+    scr.editWin = new Ext.Window({
+      id: 'scrEditWin',
+      title: scr.text.editWin,
+      closeAction:'hide',
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        scr.editForm
+      ]
+    });
+
+    scr.grid = new Ext.grid.GridPanel({
+      id: 'scrGrid',
+      renderTo: 'supplier_contact_record_grid',
+      title: scr.text.grid,
+      iconCls: 'silk-application-view_columns',
+      height: 350,
+      store: scr.store,
+      loadMask: true,
+      stripeRows: true,
+      enableRowBody: true,
+      plugins: [scr.filters,new Ext.ux.grid.GroupSummary()],
+      view: new Ext.grid.GroupingView({
+        forceFit: true,
+        showGroupName: false,
+        enableNoGroups: false,
+        enableGroupingMenu: false
+        // hideGroupedColumn: true
+      }),
+      colModel:scr.cm,
+      tbar: [{
+          id: 'scrBtnGridAdd',
+          text: 'Add',
+          iconCls: 'silk-add',
+          handler: scr.onAdd
+        }, '-', {
+          id: 'scrBtnGridEdit',
+          text: 'Edit',
+          iconCls: 'silk-application-edit',
+          handler: scr.onEdit
+        }, '-', {
+          id: 'scrBtnGridDelete',
+          text: 'Delete',
+          iconCls: 'silk-delete',
+          handler: scr.onDelete
+        },'->',
+        {
+          id: 'scrBtnGridClearFilter',
+          text: 'Clear Filter Data',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            scr.grid.filters.clearFilters();
+          }
+        }
+      ],
+      listeners : {
+        'rowcontextmenu' : function(grid, rowIndex, e){
+          var sm = grid.getSelectionModel();
+          sm.selectRow(rowIndex, sm.isSelected(rowIndex));
+          scr.rightClick(grid, rowIndex, e);
+        }
+      },
+      bbar:
+        new Ext.PagingToolbar({
+        pageSize: limit,
+        store: scr.store,
+        displayInfo: true,
+        displayMsg: scr.text.displayFooter ,
+        emptyMsg: scr.text.emptyDisplayFooter,
+        plugins: [scr.filters]
+      })
+    });
+  });
+</script>
+<div id="supplier_contact_record_grid"></div>

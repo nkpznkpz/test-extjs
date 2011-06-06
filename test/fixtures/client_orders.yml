@@ -1,0 +1,19 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  total_quantity: 1.5
+  client_PO_id: 1
+  trader_sku_id: 1
+  request_etd: MyString
+  request_etd: MyString
+  unit_of_order: MyString
+  unit_price: 1.5
+
+two:
+  total_quantity: 1.5
+  client_PO_id: 1
+  trader_sku_id: 1
+  request_etd: MyString
+  request_etd: MyString
+  unit_of_order: MyString
+  unit_price: 1.5

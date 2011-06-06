@@ -1,0 +1,12 @@
+# Sample localization file for English. Add more files in this directory for other locales.
+# See http://github.com/svenfuchs/rails-i18n/tree/master/rails%2Flocale for starting points.
+
+en:
+  hello: "Hello world"
+  error:
+    date_format: "is not valid"
+    client_contract:
+      contract_code:
+        length: "is 13 characters long."
+        presence_of: "can't be blank. Please select Client."
+        format_of_date: "is not a valid date."

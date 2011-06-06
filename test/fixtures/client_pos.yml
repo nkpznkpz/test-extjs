@@ -1,0 +1,19 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  po: MyString
+  po_date: 2010-08-05 15:33:07
+  po_amount: 1.5
+  currency: MyString
+  client_contract_id: 1
+  payment_term_id: 1
+  payment_term_day: 1
+
+two:
+  po: MyString
+  po_date: 2010-08-05 15:33:07
+  po_amount: 1.5
+  currency: MyString
+  client_contract_id: 1
+  payment_term_id: 1
+  payment_term_day: 1

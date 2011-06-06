@@ -1,0 +1,1009 @@
+<style type="text/css">
+  .desCombo{
+    color:#888888;
+  }
+</style>
+<script type="text/javascript">
+  //create namespace client_invoice/index
+  var cInvoice = {}; //<<-----------find and replace for you
+  //create namespace client_order_fulfillment_no_invoice/index
+  var cFFNoInvoice = {}; //<<-----------find and replace for you
+  //======================= init all config ==============================
+  var limit = 10;
+  cInvoice.restUrl = {
+    read:'<%= client_invoice_grid_view_path %>',
+    create:'<%= client_invoice_grid_path %>',
+    update:'<%= client_invoice_grid_path %>',  // params[:id] != ''
+    destroy:'<%= client_invoice_grid_path %>',  //--send params[:oper] = 'del'
+    viewDetail: ''
+  };
+
+  cInvoice.rightClick = function(grid, row, e){
+    var storeItem = grid.getStore();
+    var itemGridRecords = storeItem.getRange(0,storeItem.getCount()-1);
+    e.preventDefault();
+    this.cellMenu = new Ext.menu.Menu({
+      items : [{
+          xtype : 'menuitem',
+          text: 'Add Order Fulfillment To Invoice',
+          iconCls: 'silk-application_form_magnify',
+          handler:function(){
+            
+            var id = itemGridRecords[row].get('id');
+            cFFNoInvoice.client_invoice_id = id;
+            cFFNoInvoice.store.reload();
+            cFFNoInvoice.sm.clearSelections(true);
+            cFFNoInvoice.showFFWin.show();
+          }
+        },
+        {
+          xtype : 'menuitem',
+          text: 'View Client Invoice',
+          iconCls: 'silk-application_form_magnify',
+          handler:function(){
+            var id = itemGridRecords[row].get('id');
+            invoiceShow.client_invoice_id = id;
+            invoiceShow.store.load({
+              params:{
+                start: 0,
+                limit: limit,
+                client_invoice_id: id
+              }
+            });
+            invoiceShow.showFFWin.show();
+          }
+        }, '-', {
+          text: 'Edit',
+          iconCls: 'silk-application-edit',
+          handler: cInvoice.onEdit
+        }, {
+          text: 'Delete',
+          iconCls: 'silk-delete',
+          handler: cInvoice.onDelete
+        }]
+    });
+    this.cellMenu.showAt(e.getXY());
+  }
+
+  cInvoice.readerField =[
+    {name:'id',mapping:'id'},
+    {name:'invoice_number',mapping:'invoice_number'},
+    {name:'invoice_date',mapping:'invoice_date',type:'date',dateFormat: 'c'},
+    {name:'total_amount',mapping:'total_amount'},
+    {name:'payment_date',mapping:'payment_date',type:'date',dateFormat: 'c'}
+  ];
+
+  //============column model for grid ======================================
+  cInvoice.cm = new Ext.grid.ColumnModel({
+    defaults:{
+      sortable:true
+    },
+    columns:[
+      new Ext.grid.RowNumberer(),
+      {
+        header: 'Invoice Number',
+        width: 300,
+        dataIndex: 'invoice_number'
+      },
+      {
+        header: 'Invoice Date',
+        width: 250,
+        dataIndex: 'invoice_date',
+        renderer: Ext.util.Format.dateRenderer('d-m-Y')
+      },
+      {
+        header: 'Total Amount',
+        width: 200,
+        dataIndex: 'total_amount'
+      },
+      {
+        header: 'payment_date',
+        width: 150,
+        dataIndex: 'payment_date',
+        renderer: Ext.util.Format.dateRenderer('d-m-Y')
+      }
+    ]
+  });
+
+  cInvoice.filterField = [{ //---------map same Json Reader name
+      type: 'string',
+      dataIndex: 'invoice_number'
+    }, {
+      type: 'date',
+      dataIndex: 'invoice_date',
+      dateFormat: 'Y-m-d H:i:s'
+    }, {
+      type: 'numeric',
+      dataIndex: 'total_amount'
+    }, {
+      type: 'date',
+      dataIndex: 'payment_date'
+    }];
+
+  cInvoice.formItem = [ //--------item in form ex.combobox,textfield
+    {
+      xtype:'hidden',
+      name:'id'
+    }, {
+      xtype: 'textfield',
+      fieldLabel: 'Invoice Number',
+      name: 'invoice_number'
+    }, {
+      xtype:'datefield',
+      fieldLabel: 'Invoice Date',
+      name: 'invoice_date',
+      format:'d-m-Y'
+    }, {
+      fieldLabel: 'Total Amount',
+      name:'total_amount',
+      xtype: 'textfield'
+    }, {
+      xtype:'datefield',
+      fieldLabel: 'Payment Date',
+      name: 'payment_date',
+      format:'d-m-Y'
+    }
+    
+  ];
+
+  //===============title text for grid
+  cInvoice.text = {
+    grid: 'Listing Client Invoice',
+    addWin: 'Add Client Invoice',
+    editWin: 'Edit Client Invoice',
+    displayFooter : 'Displaying Client Invoices {0} - {1} of {2}',
+    emptyDisplayFooter: 'No Client Invoices to display'
+  };
+  cInvoice.errorConfig = {
+    title:'Error',
+    msg: 'Please Select Row.',
+    buttons: Ext.Msg.OK,
+    animEl: 'logo',
+    icon: Ext.MessageBox.ERROR
+  }
+
+  Ext.onReady(function(){
+    
+    var gridMask = new Ext.LoadMask('client_invoice_grid', {msg:"Loading..."});
+    //============== Action Handler ======================
+
+    cInvoice.onAdd = function(){ //event on click add on grid menu
+      cInvoice.addForm.getForm().reset();
+      // cInvoice.addForm.getForm().setValues({status:1});
+      cInvoice.addForm.getForm().clearInvalid();
+      cInvoice.addWin.show();
+    }
+    cInvoice.onEdit = function(){ //event on click add on grid menu
+      var r = cInvoice.grid.getSelectionModel().getSelected();
+      if(r!=undefined){
+        cInvoice.editForm.getForm().reset();
+        //cInvoice.editForm.getForm().setValues({status:1});
+        cInvoice.editForm.getForm().clearInvalid();
+        var rec = cInvoice.store.getById(''+r.data.id);
+        cInvoice.editForm.getForm().loadRecord(rec);
+        cInvoice.editWin.show();
+      }else{
+        Ext.Msg.show(cInvoice.errorConfig);
+      }
+    }
+    cInvoice.onDelete = function(){
+      var r = cInvoice.grid.getSelectionModel().getSelected();
+      if(r!=undefined){
+        var rec = cInvoice.store.getById(''+r.data.id);
+        Ext.MessageBox.confirm('Delete', 'Are you sure?', function(btn){
+          if(btn == 'yes'){
+            gridMask.show();
+            var conn = new Ext.data.Connection();
+            conn.request({
+              url: cInvoice.restUrl.destroy,
+              //method: 'POST',
+              params: {
+                oper:'del',
+                id:r.data.id
+              },
+              success: function(response, options){
+                var resText = Ext.util.JSON.decode(response.responseText);
+                gridMask.hide();
+                if(resText.success){
+                  cInvoice.store.reload();
+                }else{
+                  Ext.MessageBox.show({
+                    title:'Error',
+                    msg: resText.errors.base,
+                    buttons: Ext.Msg.OK,
+                    icon: Ext.MessageBox.ERROR
+                  });
+                }
+              }
+
+            });
+
+          }
+        });
+      }else{
+        Ext.Msg.show(cInvoice.errorConfig);
+      }
+    }
+    //================== End Handler ===================
+    Ext.QuickTips.init();
+    cInvoice.writer = new Ext.data.JsonWriter({
+      encode: true,
+      writeAllFields: false
+    });
+    cInvoice.reader = new Ext.data.JsonReader({
+      totalProperty: 'total',
+      successProperty: 'success',
+      idProperty: 'id',
+      root: 'data',
+      messageProperty: 'message',
+      fields: cInvoice.readerField
+    });
+    //================== store =====================
+    cInvoice.store = new Ext.data.GroupingStore({
+      url: cInvoice.restUrl.read,
+      reader: cInvoice.reader,
+      writer: cInvoice.writer,
+      autoSave: false,
+      remoteSort: true,
+      remoteGroup:true,
+      baseParams:{
+        start: 0,
+        limit: limit,
+        q:1
+      },
+      autoLoad:true
+    });
+
+    //==================  filter =====================
+    cInvoice.filters = new Ext.ux.grid.GridFilters({
+      encode: false, // json encode the filter query
+      updateBuffer: 1,
+      filters: cInvoice.filterField
+    });
+
+    cInvoice.addForm = new Ext.form.FormPanel({
+      id: 'cInvoiceAddForm',
+      iconCls: 'silk-user',
+      frame: true,
+      labelAlign: 'right',
+      frame: true,
+      width: 400,
+      defaults:{
+        width:200
+      },
+      items: cInvoice.formItem,
+      buttons:[
+        {
+          id: 'cInvoiceBtnAddFormSave',
+          text:'Save',
+          handler:function(){ //handler button click
+            cInvoice.addForm.getForm().submit({
+              url: cInvoice.restUrl.create,
+              params:{
+                is_add: '1'
+              },
+              waitMsg:'Saving...',
+              success: function(form, action) {
+                cInvoice.addWin.hide();
+                cInvoice.store.load({
+                  params:{
+                    sort:'client_invoices.id',
+                    dir:'DESC'
+                  }
+                });
+              }
+            });
+          }
+        }, {
+          id: 'cInvoiceBtnAddFormCancel',
+          text:'Cancel',
+          handler:function(){
+            cInvoice.addWin.hide();
+          }
+        }
+      ]
+    });
+
+    cInvoice.editForm = new Ext.form.FormPanel({
+      id: 'cInvoiceEditForm',
+      iconCls: 'silk-user',
+      frame: true,
+      labelAlign: 'right',
+      frame: true,
+      width: 400,
+      defaultType: 'textfield',
+      defaults:{
+        width:200
+      },
+      items: cInvoice.formItem,
+      buttons:[
+        {
+          id: 'cInvoiceBtnEditFormSave',
+          text:'Save',
+          handler:function(){
+            cInvoice.editForm.getForm().submit({
+              url: cInvoice.restUrl.update,
+              waitMsg:'Saving...',
+              success: function(form, action) {
+                cInvoice.editWin.hide();
+                cInvoice.store.reload();
+              }
+            });
+          }
+        }, {
+          id: 'cInvoiceBtnEditFormCancel',
+          text:'Cancel',
+          handler:function(){
+            cInvoice.editWin.hide();
+          }
+        }
+      ]
+    });
+
+    cInvoice.addWin = new Ext.Window({
+      id: 'cInvoiceAddWin',
+      title: cInvoice.text.addWin,
+      closeAction:'hide',
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        cInvoice.addForm
+      ]
+    });
+
+    cInvoice.editWin = new Ext.Window({
+      id: 'cInvoiceEditWin',
+      title: cInvoice.text.editWin,
+      closeAction:'hide',
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        cInvoice.editForm
+      ]
+    });
+
+    cInvoice.grid = new Ext.grid.GridPanel({
+      id: 'cInvoiceGrid',
+      renderTo: 'client_invoice_grid',
+      title: cInvoice.text.grid,
+      iconCls: 'silk-application-view_columns',
+      height: 350,
+      store: cInvoice.store,
+      loadMask: true,
+      stripeRows: true,
+      enableRowBody: true,
+      plugins: [cInvoice.filters],
+      view: new Ext.grid.GroupingView({
+        forceFit:true,
+        groupTextTpl: '{text} ({[values.rs.length]} {[values.rs.length > 1 ? "Items" : "Item"]})'
+      }),
+      colModel:cInvoice.cm,
+      tbar: [{
+          id: 'cInvoiceBtnGridAdd',
+          text: 'Add',
+          iconCls: 'silk-add',
+          handler: cInvoice.onAdd
+        }, '-', {
+          id: 'cInvoiceBtnGridEdit',
+          text: 'Edit',
+          iconCls: 'silk-application-edit',
+          handler: cInvoice.onEdit
+        }, '-', {
+          id: 'cInvoiceBtnGridDelete',
+          text: 'Delete',
+          iconCls: 'silk-delete',
+          handler: cInvoice.onDelete
+        },'->',
+        {
+          id: 'cInvoiceBtnGridFilter',
+          text: 'Clear Filter Data',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            cInvoice.grid.filters.clearFilters();
+          }
+        },'-',
+        {
+          id: 'cInvoiceBtnGridGrouping',
+          text: 'Clear Grouping',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            cInvoice.store.clearGrouping();
+          }
+        }
+      ],
+      listeners : {
+        'rowcontextmenu' : function(grid, rowIndex, e){
+          var sm = grid.getSelectionModel();
+          sm.selectRow(rowIndex, sm.isSelected(rowIndex));
+          cInvoice.rightClick(grid, rowIndex, e);
+        }
+      },
+      bbar:
+        new Ext.PagingToolbar({
+        pageSize: limit,
+        store: cInvoice.store,
+        displayInfo: true,
+        displayMsg: cInvoice.text.displayFooter ,
+        emptyMsg: cInvoice.text.emptyDisplayFooter,
+        plugins: [cInvoice.filters]
+      })
+    });
+  });
+
+  //==============================================================================================
+
+  
+  //======================= init all config ==============================
+  cFFNoInvoice.restUrl = {
+    read:'<%=show_client_order_fulfillment_no_invoice_grid_view_path %>',
+    create:'<%=url_for :controller => 'client_invoice', :action => 'add_fulfillment_to_invoice' %>',
+    update:'',  // params[:id] != ''
+    destroy:'',  //--send params[:oper] = 'del'
+    viewDetail: ''
+  };
+
+  cFFNoInvoice.rightClick = function(grid, row, e){
+
+  }
+
+  cFFNoInvoice.readerField =[
+    {name:'id',mapping:'id'},
+    {name:'supplier_sku_id',mapping:'supplier_sku_id'},
+    {name:'supplier_sku_name',mapping:'supplier_sku_name'},
+    {name:'quantity',mapping:'quantity'},
+    {name:'order_status_id',mapping:'order_status_id'},
+    {name:'order_status_name',mapping:'order_status_name'},
+    {name:'total_drain_weight',mapping:'total_drain_weight'},
+    {name:'total_gross_weight',mapping:'total_gross_weight'},
+    {name:'total_net_weight',mapping:'total_net_weight'},
+    {name:'container_usage',mapping:'container_usage'},
+    {name:'unit_id',mapping:'unit_id'},
+    {name:'unit_name',mapping:'unit_name'}
+  ];
+
+  //============column model for grid ======================================
+  cFFNoInvoice.sm = new Ext.grid.CheckboxSelectionModel({
+    singleSelect: false,
+    sortable: false,
+    checkOnly: true,
+    header: ''
+  });
+
+  cFFNoInvoice.cm = new Ext.grid.ColumnModel({
+    defaults:{
+      sortable:true
+    },
+    columns:[
+      cFFNoInvoice.sm,
+      {
+        header: 'Product',
+        width: 250,
+        maxLength: 13,
+        dataIndex: 'supplier_sku_id',
+        renderer:function(val, meta, record) {
+          return record.data.supplier_sku_name;
+        }
+      },
+      {
+        header: 'Quantity',
+        width: 170,
+        dataIndex: 'quantity'
+      },
+      {
+        header: 'Order Status',
+        width: 200,
+        dataIndex: 'order_status_id',
+        renderer:function(val, meta, record) {
+          return record.data.order_status_name;
+        }
+      },
+      {
+        header: 'Total Drain Weight',
+        width: 200,
+        dataIndex: 'total_drain_weight'
+      },
+      {
+        header: 'Total Gross Weight',
+        width: 200,
+        dataIndex: 'total_gross_weight'
+      },
+      {
+        header: 'Total Net Weight',
+        width: 200,
+        dataIndex: 'total_net_weight'
+      },
+      {
+        header: 'Container Usage',
+        width: 150,
+        dataIndex: 'container_usage'
+      },
+      {
+        header: 'Unit',
+        width: 200,
+        dataIndex: 'unit_id',
+        renderer:function(val, meta, record) {
+          return record.data.unit_name;
+        }
+      }
+    ]
+  });
+
+  cFFNoInvoice.filterField = [{ //---------map same Json Reader name
+      type: 'string',
+      dataIndex: 'supplier_sku_id'
+    }, {
+      type: 'numeric',
+      dataIndex: 'quantity'
+    }, {
+      type: 'string',
+      dataIndex: 'order_status_id'
+    }, {
+      type: 'numeric',
+      dataIndex: 'total_drain_weight'
+    }, {
+      type: 'numeric',
+      dataIndex: 'total_gross_weight'
+    }, {
+      type: 'numeric',
+      dataIndex: 'total_net_weight'
+    }, {
+      type: 'numeric',
+      dataIndex: 'container_usage'
+    }, {
+      type: 'string',
+      dataIndex: 'unit_id'
+    }];
+
+
+
+  //===============title text for grid
+  cFFNoInvoice.text = {
+    grid: 'Listing Client Order Fulfillment',
+    addWin: 'Add Client Order Fulfillment',
+    editWin: 'Edit Client Order Fulfillment',
+    displayFooter : 'Displaying Client Order Fulfillment {0} - {1} of {2}',
+    emptyDisplayFooter: 'No Client Order Fulfillment to display'
+  };
+  cFFNoInvoice.errorConfig = {
+    title:'Error',
+    msg: 'Please Select Row.',
+    buttons: Ext.Msg.OK,
+    animEl: 'logo',
+    icon: Ext.MessageBox.ERROR
+  }
+
+  Ext.onReady(function(){
+    // var gridMask = new Ext.LoadMask('client_order_fulfillment_grid', {msg:"Loading..."});
+    //============== Action Handler ======================
+
+    cFFNoInvoice.onAdd = function(){ //event on click add on grid menu      
+      var getSelect = cFFNoInvoice.sm.getSelections();
+     
+      var data = "";
+      if (getSelect.length!=0){
+        for(var i=0;i<getSelect.length;i++){
+          data+=getSelect[i].data.id;
+          (getSelect.length-1!=i)?data+=',':'';
+        }
+        
+        Ext.Ajax.request({
+          url: '<%=url_for :controller => 'client_invoice', :action => 'add_fulfillment_to_invoice' %>',
+          success: function(data){
+            cFFNoInvoice.showFFWin.hide();
+          },
+          failure: function(data){
+
+          },
+          params: {
+            fulfillmentlist: data,
+            client_invoice_id: cFFNoInvoice.client_invoice_id
+          }
+        });
+
+      }
+    }
+
+    //================== End Handler ===================
+    Ext.QuickTips.init();
+    cFFNoInvoice.writer = new Ext.data.JsonWriter({
+      encode: true,
+      writeAllFields: false
+    });
+    cFFNoInvoice.reader = new Ext.data.JsonReader({
+      totalProperty: 'total',
+      successProperty: 'success',
+      idProperty: 'id',
+      root: 'data',
+      messageProperty: 'message',
+      fields: cFFNoInvoice.readerField
+    });
+    //================== store =====================
+    cFFNoInvoice.store = new Ext.data.GroupingStore({
+      url: cFFNoInvoice.restUrl.read,
+      reader: cFFNoInvoice.reader,
+      writer: cFFNoInvoice.writer,
+      autoSave: false,
+      remoteSort: true,
+      remoteGroup:true,
+      baseParams:{
+        start: 0,
+        limit: limit
+      }
+    });
+    //==================  filter =====================
+    cFFNoInvoice.filters = new Ext.ux.grid.GridFilters({
+      encode: false, // json encode the filter query
+      updateBuffer: 1,
+      filters: cFFNoInvoice.filterField
+    });
+
+    
+
+   
+    cFFNoInvoice.grid = new Ext.grid.GridPanel({
+      id: 'cFFNoInvoiceGrid',
+      // title: cFFNoInvoice.text.grid,
+      selModel: cFFNoInvoice.sm,
+      iconCls: 'silk-application-view_columns',
+      height: 350,
+      store: cFFNoInvoice.store,
+      loadMask: true,
+      stripeRows: true,
+      enableRowBody: true,
+      plugins: [cFFNoInvoice.filters],
+      view: new Ext.grid.GroupingView({
+        forceFit:true,
+        groupTextTpl: '{text} ({[values.rs.length]} {[values.rs.length > 1 ? "Items" : "Item"]})'
+      }),
+      colModel:cFFNoInvoice.cm,
+      tbar: [{
+          id: 'cFFNoInvoiceBtnGridAdd',
+          text: 'Add All fulfillment To Invoice',
+          iconCls: 'silk-add',
+          handler: cFFNoInvoice.onAdd
+        },'->',
+        {
+          id: 'cFFNoInvoiceBtnGridClearFilter',
+          text: 'Clear Filter Data',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            cFFNoInvoice.grid.filters.clearFilters();
+          }
+        },'-',
+        {
+          id: 'cFFNoInvoiceBtnGridClearGrouping',
+          text: 'Clear Grouping',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            cFFNoInvoice.store.clearGrouping();
+          }
+        }
+      ],
+      listeners : {
+        'rowcontextmenu' : function(grid, rowIndex, e){
+          var sm = grid.getSelectionModel();
+          sm.selectRow(rowIndex, sm.isSelected(rowIndex));
+          cFFNoInvoice.rightClick(grid, rowIndex, e);
+        }
+      },
+      bbar:
+        new Ext.PagingToolbar({
+        pageSize: limit,
+        store: cFFNoInvoice.store,
+        displayInfo: true,
+        displayMsg: cFFNoInvoice.text.displayFooter ,
+        emptyMsg: cFFNoInvoice.text.emptyDisplayFooter,
+        plugins: [cFFNoInvoice.filters]
+      })
+    });     
+  });
+
+  //========================= invoice show ===================================
+
+  //create namespace client_order_fulfillment/index
+  var invoiceShow = {}; //<<-----------find and replace for you
+  //======================= init all config ==============================
+  invoiceShow.restUrl = {
+    read:'<%= url_for(:controller => 'client_invoice', :action => 'show') %>',
+    destroy:'<%= url_for(:controller => 'client_invoice', :action => 'delete_ff_invoice') %>',  //--send params[:oper] = 'del'
+    viewDetail: ''
+  };
+
+  invoiceShow.rightClick = function(grid, row, e){
+    var storeItem = grid.getStore();
+    var itemGridRecords = storeItem.getRange(0,storeItem.getCount()-1);
+    e.preventDefault();
+    this.cellMenu = new Ext.menu.Menu({
+      items : [{
+          text: 'Delete',
+          iconCls: 'silk-delete',
+          handler: invoiceShow.onDelete
+        }]
+    });
+    this.cellMenu.showAt(e.getXY());
+  }
+
+  invoiceShow.readerField =[
+    {name:'id',mapping:'id'},
+    {name:'supplier_sku_id',mapping:'supplier_sku_id'},
+    {name:'supplier_sku_name',mapping:'supplier_sku_name'},
+    {name:'quantity',mapping:'quantity'},
+    {name:'order_status_id',mapping:'order_status_id'},
+    {name:'order_status_name',mapping:'order_status_name'},
+    {name:'total_drain_weight',mapping:'total_drain_weight'},
+    {name:'total_gross_weight',mapping:'total_gross_weight'},
+    {name:'total_net_weight',mapping:'total_net_weight'},
+    {name:'container_usage',mapping:'container_usage'},
+    {name:'unit_id',mapping:'unit_id'},
+    {name:'unit_name',mapping:'unit_name'}
+  ];
+
+  //============column model for grid ======================================
+  invoiceShow.cm = new Ext.grid.ColumnModel({
+    defaults:{
+      sortable:true
+    },
+    columns:[
+      new Ext.grid.RowNumberer(),
+      {
+        header: 'Product',
+        width: 250,
+        maxLength: 13,
+        dataIndex: 'supplier_sku_id',
+        renderer:function(val, meta, record) {
+          return record.data.supplier_sku_name;
+        }
+      },
+      {
+        header: 'Quantity',
+        width: 170,
+        dataIndex: 'quantity'
+      },
+      {
+        header: 'Order Status',
+        width: 200,
+        dataIndex: 'order_status_id',
+        renderer:function(val, meta, record) {
+          return record.data.order_status_name;
+        }
+      },
+      {
+        header: 'Total Drain Weight',
+        width: 200,
+        dataIndex: 'total_drain_weight'
+      },
+      {
+        header: 'Total Gross Weight',
+        width: 200,
+        dataIndex: 'total_gross_weight'
+      },
+      {
+        header: 'Total Net Weight',
+        width: 200,
+        dataIndex: 'total_net_weight'
+      },
+      {
+        header: 'Container Usage',
+        width: 150,
+        dataIndex: 'container_usage'
+      },
+      {
+        header: 'Unit',
+        width: 200,
+        dataIndex: 'unit_id',
+        renderer:function(val, meta, record) {
+          return record.data.unit_name;
+        }
+      }
+    ]
+  });
+
+  invoiceShow.filterField = [{ //---------map same Json Reader name
+      type: 'string',
+      dataIndex: 'supplier_sku_id'
+    }, {
+      type: 'numeric',
+      dataIndex: 'quantity'
+    }, {
+      type: 'string',
+      dataIndex: 'order_status_id'
+    }, {
+      type: 'numeric',
+      dataIndex: 'total_drain_weight'
+    }, {
+      type: 'numeric',
+      dataIndex: 'total_gross_weight'
+    }, {
+      type: 'numeric',
+      dataIndex: 'total_net_weight'
+    }, {
+      type: 'numeric',
+      dataIndex: 'container_usage'
+    }, {
+      type: 'string',
+      dataIndex: 'unit_id'
+    }];
+
+  //===============title text for grid
+  invoiceShow.text = {
+    grid: 'Listing Client Order Fulfillment Invoice',
+    addWin: 'Add Client Order Fulfillment Invoice',
+    editWin: 'Edit Client Order Fulfillment Invoice',
+    displayFooter : 'Displaying Client Order Fulfillment Invoice {0} - {1} of {2}',
+    emptyDisplayFooter: 'No Client Order Fulfillment Invoice to display'
+  };
+  invoiceShow.errorConfig = {
+    title:'Error',
+    msg: 'Please Select Row.',
+    buttons: Ext.Msg.OK,
+    animEl: 'logo',
+    icon: Ext.MessageBox.ERROR
+  }
+  Ext.onReady(function(){
+    
+    //============== Action Handler ======================
+
+    invoiceShow.onDelete = function(){
+      var r = invoiceShow.grid.getSelectionModel().getSelected();
+      if(r!=undefined){
+        var rec = invoiceShow.store.getById(''+r.data.id);
+        Ext.MessageBox.confirm('Delete', 'Are you sure?', function(btn){
+          if(btn == 'yes'){
+            //gridMask.show();
+            var conn = new Ext.data.Connection();
+            conn.request({
+              url: invoiceShow.restUrl.destroy,
+              //method: 'POST',
+              params: {
+                oper:'del',
+                id:r.data.id
+              },
+              success: function(response, options){
+                var resText = Ext.util.JSON.decode(response.responseText);
+                if(resText.success){
+                  invoiceShow.store.reload();
+                }else{
+                  Ext.MessageBox.show({
+                    title:'Error',
+                    msg: resText.errors.base,
+                    buttons: Ext.Msg.OK,
+                    icon: Ext.MessageBox.ERROR
+                  });
+                }
+              }
+              //  failure: function(response, options){ alert('Delete operation failed.'); }
+            });
+
+          }
+        });
+      }else{
+        Ext.Msg.show(invoiceShow.errorConfig);
+      }
+    }
+    //================== End Handler ===================
+    Ext.QuickTips.init();
+    invoiceShow.writer = new Ext.data.JsonWriter({
+      encode: true,
+      writeAllFields: false
+    });
+    invoiceShow.reader = new Ext.data.JsonReader({
+      totalProperty: 'total',
+      successProperty: 'success',
+      idProperty: 'id',
+      root: 'data',
+      messageProperty: 'message',
+      fields: invoiceShow.readerField
+    });
+    //================== store =====================
+    invoiceShow.store = new Ext.data.GroupingStore({
+      url: invoiceShow.restUrl.read,
+      reader: invoiceShow.reader,
+      writer: invoiceShow.writer,
+      autoSave: false,
+      remoteSort: true,
+      remoteGroup:true,
+      baseParams:{
+        start: 0,
+        limit: limit
+      }
+    });
+
+    //==================  filter =====================
+    invoiceShow.filters = new Ext.ux.grid.GridFilters({
+      encode: false, // json encode the filter query
+      updateBuffer: 1,
+      filters: invoiceShow.filterField
+    });
+
+    
+    invoiceShow.grid = new Ext.grid.GridPanel({
+      id: 'invoiceShowGrid',
+      iconCls: 'silk-application-view_columns',
+      height: 350,
+      store: invoiceShow.store,
+      loadMask: true,
+      stripeRows: true,
+      enableRowBody: true,
+      plugins: [invoiceShow.filters],
+      view: new Ext.grid.GroupingView({
+        forceFit:true,
+        groupTextTpl: '{text} ({[values.rs.length]} {[values.rs.length > 1 ? "Items" : "Item"]})'
+      }),
+      colModel:invoiceShow.cm,
+      tbar: [{
+          id: 'invoiceShowBtnGridDelete',
+          text: 'Delete',
+          iconCls: 'silk-delete',
+          handler: invoiceShow.onDelete
+        },'->',
+        {
+          id: 'invoiceShowBtnGridClearFilter',
+          text: 'Clear Filter Data',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            invoiceShow.grid.filters.clearFilters();
+          }
+        },'-',
+        {
+          id: 'invoiceShowBtnGridClearGrouping',
+          text: 'Clear Grouping',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            invoiceShow.store.clearGrouping();
+          }
+        }
+      ],
+      listeners : {
+        'rowcontextmenu' : function(grid, rowIndex, e){
+          var sm = grid.getSelectionModel();
+          sm.selectRow(rowIndex, sm.isSelected(rowIndex));
+          invoiceShow.rightClick(grid, rowIndex, e);
+        }
+      },
+      bbar:
+        new Ext.PagingToolbar({
+        pageSize: limit,
+        store: invoiceShow.store,
+        displayInfo: true,
+        displayMsg: invoiceShow.text.displayFooter ,
+        emptyMsg: invoiceShow.text.emptyDisplayFooter,
+        plugins: [invoiceShow.filters]
+      })
+    });
+
+    cFFNoInvoice.showFFWin = new Ext.Window({
+      id: 'cFFNoInvoiceShowWin',
+      title: 'add Invoice',
+      closeAction:'hide',
+      width:900,
+      height:400,
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        cFFNoInvoice.grid
+      ]
+    });
+
+    invoiceShow.showFFWin = new Ext.Window({
+      id: 'invoiceShowWin',
+      title: 'View Invoice',
+      closeAction:'hide',
+      width:900,
+      height:400,
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        invoiceShow.grid
+      ]
+    });
+  });
+</script>
+<div id="client_invoice_grid"></div>

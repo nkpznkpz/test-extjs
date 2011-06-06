@@ -1,0 +1,445 @@
+<style type="text/css">
+  .desCombo{
+    color:#888888;
+  }
+</style>
+<script type="text/javascript">
+  //create namespace client/index
+  var cIndex = {}; //<<-----------find and replace for you
+  //======================= init all config ==============================
+  cIndex.restUrl = {
+    read:'clients/index',
+    create:'<%= url_for(:controller => 'clients', :action => 'post_data') %>',
+    update:'<%= url_for(:controller => 'clients', :action => 'post_data') %>',  // params[:id] != ''
+    destroy:'<%= url_for(:controller => 'clients', :action => 'post_data') %>'  //--send params[:oper] = 'del'
+  };
+  
+  cIndex.rightClick = function(grid, row, e){
+    var storeItem = grid.getStore();
+    var itemGridRecords = storeItem.getRange(0,storeItem.getCount()-1);
+    e.preventDefault();
+    this.cellMenu = new Ext.menu.Menu({
+      items : [{
+          text: 'Edit',
+          iconCls: 'silk-application-edit',
+          handler: cIndex.onEdit
+        }, {
+          text: 'Delete',
+          iconCls: 'silk-delete',
+          handler: cIndex.onDelete
+        }]
+    });
+    this.cellMenu.showAt(e.getXY());
+  }
+
+  cIndex.readerField =[
+    {name:'id',mapping:'id'},
+    {name:'name',mapping:'name'},
+    {name:'address',mapping:'address'},
+    {name:'country_name',mapping:'country_name'},
+    {name:'status',mapping:'status'}
+  ];
+
+  //============column model for grid ======================================
+  cIndex.cm = new Ext.grid.ColumnModel({
+    defaults:{
+      sortable:true
+    },
+    columns:[
+      new Ext.grid.RowNumberer(),
+      {
+        header: 'Client Name',
+        width: 300,
+        dataIndex: 'name'
+      },
+      {
+        header: 'Country Name',
+        width: 250,
+        dataIndex: 'country_name'
+      },
+      {
+        header: 'Address',
+        width: 300,
+        dataIndex: 'address'
+      },
+      {
+        header: 'Status',
+        width: 80,
+        dataIndex: 'status',
+        renderer:function(val, meta, record) {
+          return val == true ? 'Active' : 'Inactive';
+        }
+      }
+    ]
+  });
+
+  cIndex.filterField = [{ //---------map same Json Reader name
+      type: 'string',
+      dataIndex: 'name'
+    }, {
+      type: 'string',
+      dataIndex: 'country_name'
+    }, {
+      type: 'string',
+      dataIndex: 'address'
+    }, {
+      type: 'boolean',
+      defaultValue:true,
+      dataIndex: 'status',
+      yesText:'Active',
+      noText:'Inactive'
+    }];
+
+  cIndex.formItem = [ //--------item in form ex.combobox,textfield
+    {
+      xtype:'hidden',
+      name:'id'
+    }, {
+      xtype: 'textfield',
+      fieldLabel: 'Client Name',
+      name: 'name'
+    }, {
+      xtype: 'textarea',
+      fieldLabel: 'Address',
+      name: 'address'
+    }, {
+      fieldLabel: 'Country',
+      name:'country_name',
+      xtype: 'combo',
+      typeAhead: false,
+      //  allowBlank:false,
+      triggerAction: 'all',
+      minChars:1,
+      forceSelection:true,
+      selectOnFocus:true,
+      store: new Ext.data.Store({ //<----this store for Combobox
+        url:'<%= url_for(:controller => 'clients', :action => 'get_country') %>',
+        reader:new Ext.data.JsonReader({
+          totalProperty: 'total',
+          idProperty: 'id',
+          root: 'data',
+          fields:[
+            {name:'id',mapping:'id'},
+            {name:'name',mapping:'name'}
+          ]
+        })
+      }),
+      valueField: 'name',
+      displayField: 'name',
+      tpl:'<tpl for="."><div class="x-combo-list-item" id="{id}">{name}</div></tpl>'
+    }, {
+      xtype: 'combo',
+      name:'status',
+      fieldLabel: 'Status',
+      value:true,
+      typeAhead: false,
+      triggerAction: 'all',
+      lazyRender:true,
+      forceSelection:true,
+      selectOnFocus:true,
+      mode: 'local',
+      store: new Ext.data.ArrayStore({
+        fields: [
+          'id',
+          'name',
+          'description'
+        ],
+        data: [[true, 'Active','Testtest'], [false, 'Inactive','testttttt']]
+      }),
+      hiddenName:'status',
+      valueField: 'id',
+      displayField: 'name',
+      tpl:'<tpl for="."><div class="x-combo-list-item" id="{id}">{name}'+
+        '<div class="desCombo"><b>Description : </b>{description}</div>'+
+        '</div></tpl>'
+    }
+  ];
+
+  //===============title text for grid
+  cIndex.text = {
+    grid: 'Listing client',
+    addWin: 'Add Client',
+    editWin: 'Edit Client',
+    displayFooter : 'Displaying Clients {0} - {1} of {2}',
+    emptyDisplayFooter: 'No Clients to display'
+  };
+  cIndex.errorConfig = {
+    title:'Error',
+    msg: 'Please Select Row.',
+    buttons: Ext.Msg.OK,
+    animEl: 'logo',
+    icon: Ext.MessageBox.ERROR
+  }
+
+  Ext.onReady(function(){
+    var limit = 10;    
+    var gridMask = new Ext.LoadMask('client_grid', {msg:"Loading..."});    
+    //============== Action Handler ======================
+    
+    cIndex.onAdd = function(){ //event on click add on grid menu
+      cIndex.addForm.getForm().reset();
+      cIndex.addForm.getForm().setValues({status:1,country:''});
+      cIndex.addForm.getForm().clearInvalid();
+      cIndex.addWin.show();
+    }
+    cIndex.onEdit = function(){ //event on click add on grid menu
+      var r = cIndex.grid.getSelectionModel().getSelected();
+      if(r!=undefined){
+        cIndex.editForm.getForm().reset();
+        cIndex.editForm.getForm().setValues({status:1,name:'',country:''});
+        cIndex.editForm.getForm().clearInvalid();
+        var rec = cIndex.store.getById(''+r.data.id);
+        cIndex.editForm.getForm().loadRecord(rec);
+        cIndex.editWin.show();
+      }else{
+        Ext.Msg.show(cIndex.errorConfig);
+      }
+    }
+    cIndex.onDelete = function(){
+      var r = cIndex.grid.getSelectionModel().getSelected();
+      if(r!=undefined){
+        var rec = cIndex.store.getById(''+r.data.id);
+        Ext.MessageBox.confirm('Delete', 'Are you sure?', function(btn){
+          if(btn == 'yes'){
+            gridMask.show();
+            var conn = new Ext.data.Connection();
+            conn.request({
+              url: cIndex.restUrl.destroy,
+              //method: 'POST',
+              params: {
+                oper:'del',
+                id:r.data.id
+              },
+              success: function(response, options){
+                var resText = Ext.util.JSON.decode(response.responseText);
+                gridMask.hide();
+                if(resText.success){
+                  cIndex.store.reload();
+                }else{
+                  Ext.MessageBox.show({
+                    title:'Error',
+                    msg: resText.errors.base,
+                    buttons: Ext.Msg.OK,
+                    icon: Ext.MessageBox.ERROR
+                  });
+                }
+              }
+              //  failure: function(response, options){ alert('Delete operation failed.'); }
+            });
+          }
+        });
+      }else{
+        Ext.Msg.show(cIndex.errorConfig);
+      }
+    }
+    //================== End Handler ===================  
+    Ext.QuickTips.init();
+    cIndex.writer = new Ext.data.JsonWriter({
+      encode: true,
+      writeAllFields: false
+    });
+    cIndex.reader = new Ext.data.JsonReader({
+      totalProperty: 'total',
+      successProperty: 'success',
+      idProperty: 'id',
+      root: 'data',
+      messageProperty: 'message',
+      fields: cIndex.readerField
+    });
+    //================== store =====================
+    cIndex.store = new Ext.data.GroupingStore({
+      url: cIndex.restUrl.read,
+      reader: cIndex.reader,
+      writer: cIndex.writer,
+      autoSave: false,
+      remoteSort: true,
+      remoteGroup:true,
+      baseParams:{
+        start: 0,
+        limit: limit
+      },
+      autoLoad:true
+    });    
+
+    //==================  filter =====================
+    cIndex.filters = new Ext.ux.grid.GridFilters({
+      encode: false, // json encode the filter query
+      updateBuffer: 1,
+      filters: cIndex.filterField
+    });    
+
+    cIndex.addForm = new Ext.form.FormPanel({
+      id: 'cIndexAddForm',
+      iconCls: 'silk-user',
+      frame: true,
+      labelAlign: 'right',
+      frame: true,
+      width: 400,
+      defaults:{
+        width:200
+      },
+      items: [cIndex.formItem],
+      buttons:[
+        {
+          text:'Save',
+          id: 'cIndexBtnAddFormSave',
+          handler:function(){ //handler button click
+            cIndex.addForm.getForm().submit({
+              url: cIndex.restUrl.create,
+              params:{
+                is_add: '1'
+              },
+              waitMsg:'Saving...',
+              success: function(form, action) {
+                cIndex.addWin.hide();
+                cIndex.store.load({
+                  params:{
+                    sort:'id',
+                    dir:'DESC'
+                  }
+                });
+              }
+            });
+          }
+        }, {
+          text:'Cancel',
+          id: 'CindexBtnAddFormCancel',
+          handler:function(){
+            cIndex.addWin.hide();
+          }
+        }
+      ]
+    });
+
+    cIndex.editForm = new Ext.form.FormPanel({
+      id: 'cIndexEditForm',
+      iconCls: 'silk-user',
+      frame: true,
+      labelAlign: 'right',
+      frame: true,
+      width: 400,
+      defaultType: 'textfield',
+      defaults:{
+        width:200
+      },
+      items: [cIndex.formItem],
+      buttons:[
+        {
+          text:'Save',
+          id: 'cIndexBtnEditFormSave',
+          handler:function(){
+            cIndex.editForm.getForm().submit({
+              url: cIndex.restUrl.update,
+              waitMsg:'Saving...',
+              success: function(form, action) {
+                cIndex.editWin.hide();
+                cIndex.store.reload();
+              }
+            });
+          }
+        }, {
+          text:'Cancel',
+          id: 'cIndexBtnEditFormCancel',
+          handler:function(){
+            cIndex.editWin.hide();
+          }
+        }
+      ]
+    });
+    
+    cIndex.addWin = new Ext.Window({
+      id: 'cIndexAddWin',
+      title: cIndex.text.addWin,
+      closeAction:'hide',
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        cIndex.addForm
+      ]
+    });
+
+    cIndex.editWin = new Ext.Window({
+      id: 'cIndexEditWin',
+      bodyBorder: false,
+      border: false,
+      title: cIndex.text.editWin,
+      closeAction:'hide',
+      closable:true,
+      modal:true,
+      resizable:false,
+      plain:true,
+      items:[
+        cIndex.editForm
+      ]
+    });    
+
+    cIndex.grid = new Ext.grid.GridPanel({
+      id: 'cIndexGrid',
+      renderTo: 'client_grid',
+      title: cIndex.text.grid,
+      iconCls: 'silk-application-view_columns',
+      height: 350,
+      store: cIndex.store,
+      loadMask: true,
+      stripeRows: true,
+      plugins: [cIndex.filters],
+      view: new Ext.grid.GroupingView({
+        forceFit:true,
+        groupTextTpl: '{text} ({[values.rs.length]} {[values.rs.length > 1 ? "Items" : "Item"]})'
+      }),
+      colModel:cIndex.cm,
+      tbar: [{
+          text: 'Add',
+          id: 'cIndexBtnGridAdd',
+          iconCls: 'silk-add',
+          handler: cIndex.onAdd
+        }, '-', {
+          text: 'Edit',
+          id: 'cIndexBtnGridEdit',
+          iconCls: 'silk-application-edit',
+          handler: cIndex.onEdit
+        }, '-', {
+          text: 'Delete',
+          id: 'cIndexBtnGridDelete',
+          iconCls: 'silk-delete',
+          handler: cIndex.onDelete
+        },'->',
+        {
+          text: 'Clear Filter Data',
+          id: 'cIndexBtnGridClearFilter',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            cIndex.grid.filters.clearFilters();
+          }
+        },'-',
+        {
+          text: 'Clear Grouping',
+          id: 'cIndexBtnGridClearGrouping',
+          iconCls: 'silk-textfield_delete',
+          handler: function () {
+            cIndex.store.clearGrouping();
+          }
+        }
+      ],
+      listeners : {
+        'rowcontextmenu' : function(grid, rowIndex, e){
+          var sm = grid.getSelectionModel();
+          sm.selectRow(rowIndex, sm.isSelected(rowIndex));
+          cIndex.rightClick(grid, rowIndex, e);
+        }
+      },
+      bbar:
+        new Ext.PagingToolbar({
+        pageSize: limit,
+        store: cIndex.store,
+        displayInfo: true,
+        displayMsg: cIndex.text.displayFooter ,
+        emptyMsg: cIndex.text.emptyDisplayFooter,
+        plugins: [cIndex.filters]
+      })
+    });
+  });
+</script>
+<div id="client_grid"></div>

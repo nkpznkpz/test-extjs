@@ -1,0 +1,25 @@
+&nbsp;<%= link_to 'All Supplier Contracts', supplier_contracts_path  %> >
+<%= link_to 'Contract', supplier_contract_path(@supplier_contract) %>
+<div id="mainPanel"></div>
+<!-- class="x-hide-display" -->
+<div id="detail" >
+  <p>
+    <b>Contract code:</b>
+    <%=h @supplier_contract.contract_code %>
+  </p>
+  <p>
+    <b>Contract date:</b>
+    <%=h to_date_str(@supplier_contract.contract_date) %>
+  </p>
+  <p>
+    <b>Actual contract:</b>
+    <%=h @supplier_contract.actual_contract %>
+  </p>
+  <p>
+    <b>Supplier:</b>
+    <%=h @supplier_contract.supplier.name %>
+  </p>
+</div>
+    <%= render :file => 'supplier_contact_records/index' %><br/>
+<div style="clear: both;"></div>
+<%= render :file => 'supplier_pos/index' %>

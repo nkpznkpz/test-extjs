@@ -1,0 +1,13 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  date_sent: 2010-08-10 15:27:31
+  date_receive: 2010-08-10 15:27:31
+  pss_status_id: 1
+  client_order_id: 1
+
+two:
+  date_sent: 2010-08-10 15:27:31
+  date_receive: 2010-08-10 15:27:31
+  pss_status_id: 1
+  client_order_id: 1

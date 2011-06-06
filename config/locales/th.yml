@@ -1,0 +1,10 @@
+## 
+th:
+  hello: "สวัสดีครับ"
+  error:
+    date_format: "ไม่ใช่วันที่ถูกต้อง"
+    client_contract:
+      contract_code:
+        length: "ต้องมี 13 ตัวอักษร"
+        presence_of: "ไม่ได้ระบุ โปรดเลือก Client"
+        format_of_date: "ไม่ใช่วันที่ที่ถูกต้อง"

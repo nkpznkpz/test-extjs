@@ -1,0 +1,11 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  exchange_rate: MyString
+  settlement_date: 2010-08-31 09:40:11
+  client_invoice_id: 1
+
+two:
+  exchange_rate: MyString
+  settlement_date: 2010-08-31 09:40:11
+  client_invoice_id: 1

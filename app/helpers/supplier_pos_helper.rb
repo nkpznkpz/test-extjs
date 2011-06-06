@@ -1,0 +1,2 @@
+module SupplierPosHelper
+end

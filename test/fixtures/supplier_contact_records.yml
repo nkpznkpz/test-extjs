@@ -1,0 +1,17 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  product_id: 1
+  total1: 1.5
+  total2: 1.5
+  request_date: 2010-09-10 09:54:38
+  client_contract_id: 1
+  status: 1
+
+two:
+  product_id: 1
+  total1: 1.5
+  total2: 1.5
+  request_date: 2010-09-10 09:54:38
+  client_contract_id: 1
+  status: 1

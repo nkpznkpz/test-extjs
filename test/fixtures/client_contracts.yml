@@ -1,0 +1,13 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  contract_code: MyString
+  contract_date: 2010-08-04 14:23:57
+  actual_contract: false
+  client_id: 1
+
+two:
+  contract_code: MyString
+  contract_date: 2010-08-04 14:23:57
+  actual_contract: false
+  client_id: 1

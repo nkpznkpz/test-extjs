@@ -1,0 +1,143 @@
+<div id="top">
+  <div id="cl">
+    <div id="cl" class="cl"></div>
+    <h1 id="logo"><a href="#"></a></h1>
+
+    <div id="top-right">
+      <%=render :partial => "shared/user_bar"%>
+    </div>
+    <div class="cl">&nbsp;</div><br/>
+    <div id="menu"></div>
+  </div>
+</div>
+<script type="text/javascript">
+  // Place your application-specific JavaScript functions and classes here
+  // This file is automatically included by javascript_include_tag :defaults
+  var header = {};
+  Ext.onReady(function(){
+    Ext.QuickTips.init();
+    header.toolBar = new Ext.Toolbar({
+      renderTo:'menu',
+      height:35,
+      items:[
+        {
+          xtype:'button',
+          text:'home',
+          scale:'medium',
+          iconCls:'silk-house',
+          tooltip:'go to Home',
+          handler:function(){
+            document.location='<%= root_path %>';
+          }
+        },
+        '-',
+        {
+          xtype:'button',
+          text:'Dashboard',
+          scale:'medium',
+          iconCls:'silk-application-view-tile',
+          tooltip:'View All Action',
+          handler:function(){
+            document.location='<%= dashboard_path %>';
+          }
+        },
+        '-',
+        {
+          text:'Client',
+          iconCls:'silk-report_user',
+          height:30,
+          tooltip:'Manage Client',
+          menu:{
+            xtype:'menu',
+            plain:true,
+            items:[{
+                text:'Client Profiles',
+                iconCls:'silk-application-view-list',
+                handler:function(){
+                  document.location='<%= clients_path %>';
+                }
+              },
+              {
+                text:'Client Contracts',
+                iconCls:'silk-table-edit',
+                handler:function(){
+                  document.location='<%= client_contracts_path %>';
+                }
+              }]
+          }
+        },
+        '-',
+        {
+          text:'Supplier',
+          iconCls:'silk-lorry',
+          height:30,
+          tooltip:'Manage Supplier',
+          menu:{
+            xtype:'menu',
+            plain:true,
+            items:[{
+                text:'Supplier Profiles',
+                iconCls:'silk-application-view-list',
+                handler:function(){
+                  document.location='<%= suppliers_path %>';
+                }
+              },
+              {
+                text:'Supplier Contracts',
+                iconCls:'silk-table-edit',
+                handler:function(){
+                  document.location='<%= supplier_contracts_path %>';
+                }
+              }]
+          }
+        },
+        '-',
+        {
+          xtype:'button',
+          text:'Product',
+          scale:'medium',
+          iconCls:'silk-package_green',
+          tooltip:'Manage Product and SKU',
+          handler:function(){
+            document.location='<%= products_path %>';
+          }
+        },
+        '-',
+        {
+          xtype:'button',
+          text:'Shipment',
+          scale:'medium',
+          iconCls:'silk-lorry-go',
+          handler:function(){
+            // document.location='/shipment';
+          }
+        },
+        '-',
+        {
+          text:'Invoice',
+          iconCls:'silk-page_green',
+          tooltip:'Print or View Invoice',
+          height:30,
+          menu:{
+            xtype:'menu',
+            plain:true,
+            items:[{
+                text:'Client Invoice',
+                iconCls:'silk-page_green',
+                handler:function(){
+                  document.location='<%= url_for :controller => 'client_invoice', :action => 'index' %>';
+                }
+              },
+              {
+                text:'Supplier Invoice',
+                iconCls:'silk-page_green',
+                handler:function(){
+                  document.location='<%= url_for :controller => 'supplier_invoice', :action => 'index' %>';
+                }
+              }]
+          }
+        }
+      ]
+    });
+  });
+</script>

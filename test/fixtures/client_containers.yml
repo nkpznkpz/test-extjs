@@ -1,0 +1,13 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  container_code: MyString
+  seal_code: MyString
+  container_usage: 1.5
+  client_shipment_id: 1
+
+two:
+  container_code: MyString
+  seal_code: MyString
+  container_usage: 1.5
+  client_shipment_id: 1

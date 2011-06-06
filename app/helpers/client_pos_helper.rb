@@ -1,0 +1,2 @@
+module ClientPosHelper
+end
